@@ -30,12 +30,12 @@ const auth = getAuth(app);
 // Sesuaikan path jika struktur folder berbeda
 // ============================================================
 const ROLE_REDIRECT = {
-  admin  : '/pages/dashboard-admin.html',
-  kepsek : '/pages/dashboard-kepsek.html',
-  guru   : '/pages/dashboard-guru.html',
-  tu     : '/pages/dashboard-tu.html',
-  kantin : '/pages/dashboard-kantin.html',
-  ortu   : '/pages/dashboard-ortu.html',
+  admin  : '/pages/dashboard.html',
+  kepsek : '/pages/dashboard.html',
+  guru   : '/pages/dashboard.html',
+  tu     : '/pages/dashboard.html',
+  kantin : '/pages/dashboard.html',
+  ortu   : '/pages/dashboard.html',
 };
 
 // ============================================================
