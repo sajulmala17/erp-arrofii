@@ -1,0 +1,85 @@
+/* ============================================================
+   global.css
+   Variabel CSS, reset, dan utility yang dipakai semua halaman
+   ============================================================ */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* ============================================================
+   CSS VARIABLES
+============================================================ */
+:root {
+  /* Warna utama */
+  --green-deep  : #1a3a2a;
+  --green-mid   : #2d6a4f;
+  --green-bright: #40916c;
+  --green-light : #74c69d;
+
+  /* Aksen emas */
+  --gold        : #c9a84c;
+  --gold-light  : #e8c97a;
+
+  /* Netral */
+  --cream       : #faf7f0;
+  --cream-dark  : #f0ead8;
+  --text-dark   : #1a1a1a;
+  --text-mid    : #4a4a4a;
+  --text-soft   : #8a8a8a;
+  --white       : #ffffff;
+
+  /* Status */
+  --error       : #c0392b;
+  --success     : #27ae60;
+  --warning     : #f39c12;
+
+  /* Shadow */
+  --shadow-card : 0 20px 60px rgba(26,58,42,0.18), 0 4px 16px rgba(26,58,42,0.10);
+  --shadow-sm   : 0 2px 8px rgba(0,0,0,0.08);
+
+  /* Typography */
+  --font-main   : 'Plus Jakarta Sans', sans-serif;
+  --font-arabic : 'Amiri', serif;
+
+  /* Border radius */
+  --radius-sm   : 8px;
+  --radius-md   : 12px;
+  --radius-lg   : 20px;
+  --radius-xl   : 24px;
+}
+
+/* ============================================================
+   RESET
+============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-main);
+  color: var(--text-dark);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--green-bright);
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+img, svg { display: block; max-width: 100%; }
+
+button {
+  font-family: var(--font-main);
+  cursor: pointer;
+}
+
+input, textarea, select {
+  font-family: var(--font-main);
+}
