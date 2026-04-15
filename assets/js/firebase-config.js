@@ -32,10 +32,10 @@ const auth = getAuth(app);
 const ROLE_REDIRECT = {
   admin  : '/pages/dashboard.html',
   kepsek : '/pages/dashboard.html',
-  guru   : '/pages/dashboard.html',
-  tu     : '/pages/dashboard.html',
-  kantin : '/pages/dashboard.html',
-  ortu   : '/pages/dashboard.html',
+  guru   : '/dashboard.html',
+  tu     : '/dashboard.html',
+  kantin : '/dashboard.html',
+  ortu   : '/dashboard.html',
 };
 
 // ============================================================

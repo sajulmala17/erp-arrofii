@@ -23,7 +23,7 @@ onAuthStateChanged(auth, async (user) => {
         sessionStorage.setItem('name',  user.displayName || user.email);
         sessionStorage.setItem('email', user.email);
 
-        const target = ROLE_REDIRECT[role] || '/pages/dashboard.html';
+        const target = ROLE_REDIRECT[role] || '/dashboard.html';
         window.location.href = target;
       }
     } catch (err) {
