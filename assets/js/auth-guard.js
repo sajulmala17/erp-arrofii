@@ -82,12 +82,12 @@ async function logout() {
   try {
     await signOut(auth);
     sessionStorage.clear();
-    window.location.href = '/login.html';
+    window.location.href = './login.html';
   } catch (err) {
     console.error('[auth-guard] Logout error:', err);
     // Tetap clear storage dan redirect meski signOut gagal
     sessionStorage.clear();
-    window.location.href = '/login.html';
+    window.location.href = './login.html';
   }
 }
 
