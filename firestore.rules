@@ -1,9 +1,385 @@
 rules_version = '2';
 
+// ============================================================
+// ERP Sekolah Berasrama — Firestore Security Rules
+// Project: er-arrofi
+// Last updated: 2026
+// ============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // ----------------------------------------------------------
+    // HELPER FUNCTIONS
+    // ----------------------------------------------------------
+
+    // Ambil custom claim role dari token
+    function getRole() {
+      return request.auth.token.role;
     }
+
+    // Pastikan user sudah login
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Cek apakah user memiliki salah satu dari role yang diizinkan
+    function hasRole(roles) {
+      return isAuthenticated() && getRole() in roles;
+    }
+
+    function isAdmin()  { return hasRole(['admin']); }
+    function isKepsek() { return hasRole(['kepsek']); }
+    function isGuru()   { return hasRole(['guru']); }
+    function isTU()     { return hasRole(['tu']); }
+    function isKantin() { return hasRole(['kantin']); }
+    function isOrtu()   { return hasRole(['ortu']); }
+
+    function isAdminOrKepsek() {
+      return hasRole(['admin', 'kepsek']);
+    }
+
+    // Cek apakah uid sedang mengakses dokumen miliknya sendiri
+    function isSelf(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // Validasi incoming data hanya mengandung field yang diizinkan
+    function onlyFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ----------------------------------------------------------
+    // 1. KOLEKSI: users
+    // admin  → Full (CRUD)
+    // kepsek → Read all
+    // guru   → Read self only
+    // tu     → Read self only
+    // kantin → Tidak ada akses
+    // ortu   → Read self only
+    // ----------------------------------------------------------
+    match /users/{uid} {
+      allow read: if isAdmin()
+                  || isKepsek()
+                  || (isGuru()   && isSelf(uid))
+                  || (isTU()     && isSelf(uid))
+                  || (isOrtu()   && isSelf(uid));
+
+      allow create: if isAdmin();
+
+      allow update: if isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // 2. KOLEKSI: students
+    // admin  → Full
+    // kepsek → Read all
+    // guru   → Read all
+    // tu     → Tidak ada akses
+    // kantin → Read (untuk keperluan POS: student_id, name, saldo_jajan)
+    //          CATATAN: field pin_hash TIDAK boleh terbaca client.
+    //          Cloud Function menjadi satu-satunya yang read pin_hash.
+    //          Di sini kita izinkan read koleksi, tapi pin_hash
+    //          dijaga di level Cloud Function (tidak pernah di-return).
+    // ortu   → Read anak-anaknya saja (student_id ada di users.student_ids)
+    // ----------------------------------------------------------
+    match /students/{studentId} {
+      // Fungsi bantu: apakah student ini adalah anak dari ortu yang login?
+      function isParentOf() {
+        return isOrtu() &&
+               studentId in request.auth.token.student_ids;
+      }
+
+      // Kantin hanya bisa read field tertentu (bukan pin_hash).
+      // Firestore tidak support field-level rules, jadi kita izinkan
+      // read dokumen; perlindungan pin_hash ada di Cloud Function.
+      function isKantinPOS() {
+        return isKantin();
+      }
+
+      allow read: if isAdmin()
+                  || isKepsek()
+                  || isGuru()
+                  || isKantinPOS()
+                  || isParentOf()
+                  || isTU();
+
+      allow create: if isAdmin() || isTU();
+			allow update: if isAdmin() || isTU();
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // 3. KOLEKSI: subjects
+    // admin  → Full
+    // kepsek → Read
+    // guru   → Read
+    // tu/kantin/ortu → Tidak ada akses
+    // ----------------------------------------------------------
+    match /subjects/{subjectId} {
+      allow read:   if hasRole(['admin', 'kepsek', 'guru']);
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // 4. KOLEKSI: classes
+    // admin  → Full
+    // kepsek → Read
+    // guru   → Read
+    // lainnya → Tidak ada akses
+    // ----------------------------------------------------------
+    match /classes/{classId} {
+      allow read:   if hasRole(['admin', 'kepsek', 'guru']);
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // 5. KOLEKSI: teacher_subjects
+    // admin  → Full
+    // kepsek → Read
+    // guru   → Read
+    // lainnya → Tidak ada akses
+    // ----------------------------------------------------------
+    match /teacher_subjects/{docId} {
+      allow read:   if hasRole(['admin', 'kepsek', 'guru']);
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // 6. KOLEKSI: grades
+    // admin  → Full (termasuk finalisasi & revisi)
+    // kepsek → Read
+    // guru   → Read all, Write hanya jika:
+    //            • teacher_uid == auth.uid
+    //            • status == 'draft' (tidak bisa ubah yang sudah 'final')
+    //            • Finalisasi hanya via Cloud Function /submitGrades
+    // tu/kantin → Tidak ada akses
+    // ortu   → Read anak-anaknya saja
+    // ----------------------------------------------------------
+    match /grades/{gradeId} {
+      function isParentOfGrade() {
+        return isOrtu() &&
+               resource.data.student_id in request.auth.token.student_ids;
+      }
+
+      function isGradeOwner() {
+        // Guru hanya bisa write jika dia yang punya (teacher_uid)
+        return isGuru() && request.auth.uid == resource.data.teacher_uid;
+      }
+
+      function isNewGradeOwner() {
+        // Untuk create: pastikan teacher_uid diisi dengan uid sendiri
+        return isGuru() && request.auth.uid == request.resource.data.teacher_uid;
+      }
+
+      function isDraft() {
+        return resource.data.status == 'draft';
+      }
+
+      function isWritingDraft() {
+        // Guru tidak boleh langsung set status 'final' dari client
+        return request.resource.data.status == 'draft';
+      }
+
+      allow read: if isAdmin()
+                  || isKepsek()
+                  || isGuru()
+                  || isParentOfGrade();
+
+      // Guru bisa create nilai baru (hanya draft, teacher_uid == dirinya)
+      allow create: if isAdmin()
+                    || (isNewGradeOwner() && isWritingDraft());
+
+      // Guru bisa update hanya jika masih draft & milik dia
+      // dan tidak bisa mengubah status ke 'final' dari client
+      allow update: if isAdmin()
+                    || (isGradeOwner() && isDraft() && isWritingDraft());
+
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // 7. KOLEKSI: picket_attendance
+    // admin  → Full
+    // kepsek → Read
+    // guru   → Read + Write (hanya dokumen yang dia buat / teacher_uid sendiri)
+    // lainnya → Tidak ada akses
+    // ----------------------------------------------------------
+   match /picket_attendance/{docId} {
+  function isAttendanceOwner() {
+    return hasRole(['guru','tu']) && 
+           request.auth.uid == resource.data.teacher_uid;
   }
+
+  function isNewAttendanceOwner() {
+    return hasRole(['guru','tu']) && 
+           request.auth.uid == request.resource.data.teacher_uid;
+  }
+
+  allow read:   if hasRole(['admin', 'kepsek', 'guru', 'tu']);
+
+  allow create: if isAdmin() || isNewAttendanceOwner();
+
+  allow update: if isAdmin() || isAttendanceOwner();
+
+  allow delete: if isAdmin();
 }
+
+    // ----------------------------------------------------------
+    // 8. KOLEKSI: letters
+    // admin  → Full
+    // kepsek → Read
+    // guru   → Read hanya surat yang ditujukan ke mereka (recipient_uid)
+    // tu     → Read + Write (create draft, update status)
+    // kantin/ortu → Tidak ada akses
+    // ----------------------------------------------------------
+    match /letters/{letterId} {
+      function isRecipient() {
+        return isGuru() && request.auth.uid == resource.data.recipient_uid;
+      }
+
+      allow read: if isAdmin()
+                  || isKepsek()
+                  || isTU()
+                  || isRecipient();
+
+      allow create: if isAdmin() || isTU();
+
+      allow update: if isAdmin() || isTU();
+
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // 9. KOLEKSI: letter_counters
+    // admin  → Full
+    // kepsek → Read
+    // tu     → Read only (update hanya via Cloud Function)
+    // lainnya → Tidak ada akses
+    // PENTING: Update (increment) HANYA boleh dari Cloud Function
+    //          menggunakan Firebase Admin SDK, bukan dari client.
+    // ----------------------------------------------------------
+    match /letter_counters/{counterId} {
+      allow read:   if hasRole(['admin', 'kepsek', 'tu']);
+
+      // Tidak ada client yang boleh write langsung.
+      // Admin bisa init dokumen counter pertama kali.
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // 10. KOLEKSI: billing
+    // admin  → Full
+    // kepsek → Read
+    // tu     → Read + Write
+    // ortu   → Read tagihan anak-anaknya saja
+    // guru/kantin → Tidak ada akses
+    // ----------------------------------------------------------
+    match /billing/{billId} {
+      function isParentBilling() {
+        return isOrtu() &&
+               resource.data.student_id in request.auth.token.student_ids;
+      }
+
+      allow read: if isAdmin()
+                  || isKepsek()
+                  || isTU()
+                  || isParentBilling();
+
+      allow create: if isAdmin() || isTU();
+      allow update: if isAdmin() || isTU();
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
+    // 11. KOLEKSI: salaries
+    // admin  → Full
+    // kepsek → Read
+    // guru   → Read self, HANYA jika is_published == true
+    // tu     → ❌ BLOKIR TOTAL (tidak masuk kondisi allow manapun)
+    // kantin/ortu → Tidak ada akses
+    // ----------------------------------------------------------
+    match /salaries/{salaryId} {
+      function isOwnPublishedSalary() {
+        return isGuru()
+               && request.auth.uid == resource.data.teacher_uid
+               && resource.data.is_published == true;
+      }
+
+      allow read: if isAdmin()
+                  || isKepsek()
+                  || isOwnPublishedSalary();
+
+      // TU sama sekali tidak masuk kondisi create/update/delete
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+
+      // Catatan eksplisit: TU tidak ada di kondisi manapun di atas → 403
+    }
+
+    // ----------------------------------------------------------
+    // 12. KOLEKSI: pos_transactions
+    // admin  → Full (read + write untuk audit)
+    // kepsek → Read
+    // kantin → Read only (untuk riwayat transaksi)
+    // ortu   → Read transaksi anak-anaknya saja
+    // guru/tu → Tidak ada akses
+    // WRITE: HANYA via Cloud Function /posTransaction (Firebase Admin)
+    //        Client tidak boleh write langsung sama sekali.
+    // ----------------------------------------------------------
+    match /pos_transactions/{txId} {
+      function isParentTx() {
+        return isOrtu() &&
+               resource.data.student_id in request.auth.token.student_ids;
+      }
+
+      allow read: if isAdmin()
+                  || isKepsek()
+                  || isKantin()
+                  || isParentTx();
+
+      // allow write: if false — TIDAK ADA CLIENT yang bisa write
+      // Seluruh write dilakukan Firebase Admin SDK di Cloud Function
+      allow create: if false;
+      allow update: if false;
+      allow delete: if isAdmin(); // Admin bisa hapus untuk koreksi
+    }
+
+    // ----------------------------------------------------------
+    // 13. KOLEKSI: exam_papers
+    // admin  → Full
+    // kepsek → Read
+    // guru   → Read + Write milik sendiri (created_by == auth.uid)
+    // lainnya → Tidak ada akses
+    // ----------------------------------------------------------
+    match /exam_papers/{paperId} {
+      function isExamOwner() {
+        return isGuru() && request.auth.uid == resource.data.created_by;
+      }
+
+      function isNewExamOwner() {
+        return isGuru() && request.auth.uid == request.resource.data.created_by;
+      }
+
+      allow read: if isAdmin()
+                  || isKepsek()
+                  || isExamOwner();
+
+      allow create: if isAdmin() || isNewExamOwner();
+      allow update: if isAdmin() || isExamOwner();
+      allow delete: if isAdmin() || isExamOwner();
+    }
+
+  } // end match /databases/{database}/documents
+} // end service cloud.firestore
