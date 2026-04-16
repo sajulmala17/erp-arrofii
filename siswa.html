@@ -198,6 +198,15 @@
               <div class="form-hint">ID dibuat otomatis oleh sistem</div>
             </div>
 
+	    <!-- NISN -->
+	    <div class="form-field full">
+	      <label>NISN</label>
+	      <input type="text" id="formNisn" class="form-control"
+		     placeholder="Contoh: 0012345678" maxlength="10"
+		     inputmode="numeric" pattern="\d{10}" / required>
+	      <div class="form-hint">NISN terdiri dari maksimal 10 digit angka</div>
+	    </div>	
+
             <!-- Nama -->
             <div class="form-field full">
               <label>Nama Lengkap *</label>
@@ -239,7 +248,7 @@
               <select id="formProgram" class="form-control">
                 <option value="">-- Pilih --</option>
                 <option value="Tahfidz">Tahfidz</option>
-                <option value="Reguler">Reguler</option>
+                <option value="Reguler">Reguler</option>i
               </select>
             </div>
 

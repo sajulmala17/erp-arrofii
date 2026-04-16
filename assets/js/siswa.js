@@ -248,6 +248,7 @@ window.openEdit = function (studentId) {
 
   // Isi form
   document.getElementById('formStudentId').value = siswa.student_id;
+  document.getElementById('formNisn').value      = siswa.nisn || '';
   document.getElementById('formNama').value       = siswa.name;
   document.getElementById('formGender').value     = siswa.gender;
   document.getElementById('formKelas').value      = siswa.class_id;
@@ -297,6 +298,7 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const studentId = document.getElementById('formStudentId').value.trim();
+  const nisn      = document.getElementById('formNisn')?.value.trim() || '';
   const nama      = document.getElementById('formNama').value.trim();
   const gender    = document.getElementById('formGender').value;
   const classId   = document.getElementById('formKelas').value;
@@ -305,8 +307,13 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
   const saldo     = Number(document.getElementById('formSaldo').value) || 0;
   const pin       = document.getElementById('formPin')?.value;
 
+  // Validasi NISN: maksimal 10 digit angka (opsional)
+  if (nisn && (!/^\d{1,10}$/.test(nisn))) {
+      alert('NISN harus terdiri dari 1-10 digit angka.');
+      return;
+  }
   // Validasi
-  if (!nama || !gender || !classId || !jenjang) {
+  if (!nisn || !nama || !gender || !classId || !jenjang) {
     showToast('Lengkapi semua field yang wajib diisi.', 'error');
     return;
   }
@@ -317,7 +324,8 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
     if (editingId) {
       // === UPDATE ===
       await updateDoc(doc(db, 'students', editingId), {
-        name      : nama,
+        nisn,
+	name      : nama,
         gender,
         class_id  : classId,
         jenjang,
@@ -339,7 +347,8 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
       // Simpan ke Firestore (pin_hash diset via Cloud Function)
       await addDoc(collection(db, 'students'), {
         student_id  : studentId,
-        name        : nama,
+        nisn,
+	name        : nama,
         gender,
         class_id    : classId,
         jenjang,
