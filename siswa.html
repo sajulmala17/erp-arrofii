@@ -149,7 +149,8 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>ID Siswa</th>
+              <th>NISN</th>
+	      <th>Angkatan</th>
               <th>Nama</th>
               <th>Gender</th>
               <th>Kelas</th>
@@ -206,8 +207,16 @@
 		     inputmode="numeric" pattern="\d{10}" / required>
 	      <div class="form-hint">NISN terdiri dari maksimal 10 digit angka</div>
 	    </div>	
-
-            <!-- Nama -->
+	    
+	    <!-- Tahun Ajaran -->
+	    <div class="form-field full">
+	      <label>Tahun Ajaran <span style="color:red">*</span></label>
+	      <input type="text" id="formTahunAjaran" class="form-control" 
+	             placeholder="Contoh: 2025-2026" maxlength="9" required />
+	      <div class="form-hint">Format: YYYY-YYYY (Maksimal 9 karakter)</div>
+	    </div>
+            
+	    <!-- Nama -->
             <div class="form-field full">
               <label>Nama Lengkap *</label>
               <input type="text" id="formNama" class="form-control"

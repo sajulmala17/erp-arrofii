@@ -159,8 +159,9 @@ function renderTable(data) {
 
     return `
       <tr class="${s.aktif === false ? 'row-nonaktif' : ''}">
-        <td><span class="student-id">${s.student_id}</span></td>
-        <td class="student-name">${s.name}</td>
+        <td><span class="student-id">${s.nisn}</span></td>
+        <td class="student-name">${s.tahun_ajaran}</td>
+	<td class="student-name">${s.name}</td>
         <td>${s.gender === 'L' ? '👦 Laki-laki' : '👧 Perempuan'}</td>
         <td>${kelasMap[s.class_id] || s.class_id || '—'}</td>
         <td>${s.jenjang || '—'}</td>
@@ -250,6 +251,7 @@ window.openEdit = function (studentId) {
   document.getElementById('formStudentId').value = siswa.student_id;
   document.getElementById('formNisn').value      = siswa.nisn || '';
   document.getElementById('formNama').value       = siswa.name;
+  document.getElementById('formTahunAjaran').value = siswa.tahun_ajaran || '';
   document.getElementById('formGender').value     = siswa.gender;
   document.getElementById('formKelas').value      = siswa.class_id;
   document.getElementById('formJenjang').value    = siswa.jenjang;
@@ -299,6 +301,7 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
 
   const studentId = document.getElementById('formStudentId').value.trim();
   const nisn      = document.getElementById('formNisn')?.value.trim() || '';
+  const tahunAjaran = document.getElementById('formTahunAjaran')?.value.trim();
   const nama      = document.getElementById('formNama').value.trim();
   const gender    = document.getElementById('formGender').value;
   const classId   = document.getElementById('formKelas').value;
@@ -313,7 +316,7 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
       return;
   }
   // Validasi
-  if (!nisn || !nama || !gender || !classId || !jenjang) {
+  if (!nisn || !tahun_ajaran || !nama || !gender || !classId || !jenjang) {
     showToast('Lengkapi semua field yang wajib diisi.', 'error');
     return;
   }
@@ -325,6 +328,7 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
       // === UPDATE ===
       await updateDoc(doc(db, 'students', editingId), {
         nisn,
+	tahun_ajaran : tahunAjaran,
 	name      : nama,
         gender,
         class_id  : classId,
@@ -348,6 +352,7 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
       await addDoc(collection(db, 'students'), {
         student_id  : studentId,
         nisn,
+	tahun_ajaran : tahunAjaran,
 	name        : nama,
         gender,
         class_id    : classId,
