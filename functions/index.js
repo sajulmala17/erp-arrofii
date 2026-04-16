@@ -524,6 +524,59 @@ app.post('/generateLetterNumber', async (req, res) => {
 });
 
 // ===========================================================
+// F. SET / RESET PIN SISWA
+// POST /api/setStudentPin
+//
+// Body: { student_id, pin }
+// Guard: hanya admin & tu
+// Proses: bcrypt.hash(pin, 10) → simpan ke students/{id}.pin_hash
+// PIN plain text TIDAK pernah disimpan
+// ===========================================================
+app.post('/setStudentPin', async (req, res) => {
+  try {
+    const callerRole = req.user.role;
+
+    if (!['admin', 'tu'].includes(callerRole)) {
+      return res.status(403).json({ error: 'Forbidden: Hanya admin dan TU.' });
+    }
+
+    const { student_id, pin } = req.body;
+
+    if (!student_id || !pin) {
+      return res.status(400).json({ error: 'student_id dan pin wajib diisi.' });
+    }
+
+    if (String(pin).length !== 6 || isNaN(pin)) {
+      return res.status(400).json({ error: 'PIN harus 6 digit angka.' });
+    }
+
+    // Cek siswa ada
+    const studentDoc = await db.collection('students').doc(student_id).get();
+    if (!studentDoc.exists) {
+      return res.status(404).json({ error: 'Siswa tidak ditemukan.' });
+    }
+
+    // Hash PIN dengan bcrypt
+    const pinHash = await bcrypt.hash(String(pin), 10);
+
+    // Simpan pin_hash — PIN plain text tidak pernah disimpan
+    await db.collection('students').doc(student_id).update({
+      pin_hash  : pinHash,
+      updated_at: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return res.status(200).json({
+      message   : 'PIN berhasil diset.',
+      student_id,
+    });
+
+  } catch (err) {
+    console.error('[setStudentPin] Error:', err);
+    return res.status(500).json({ error: 'Internal server error.', detail: err.message });
+  }
+});
+
+// ===========================================================
 // EKSPOR: Express app sebagai satu Cloud Function HTTP
 // Semua endpoint di atas bisa diakses via /api/[endpoint]
 // ===========================================================
