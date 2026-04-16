@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Siswa — ERP Al-Arrofi</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/global.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/siswa.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+       TOPBAR — Mobile
+  ============================================================ -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="btn-hamburger" id="btnHamburger" aria-label="Buka menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <span class="topbar-brand">Data Siswa</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-avatar" id="topbarAvatar">?</div>
+    </div>
+  </header>
+
+  <!-- Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+
+    <!-- ============================================================
+         SIDEBAR
+    ============================================================ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 38 38" fill="none">
+            <path d="M19 3C19 3 10 10 10 20V32H28V20C28 10 19 3 19 3Z"
+                  fill="rgba(255,255,255,0.15)" stroke="white" stroke-width="1.5"/>
+            <path d="M14 32V24C14 21.8 16.2 20 19 20C21.8 20 24 21.8 24 24V32"
+                  stroke="white" stroke-width="1.5"/>
+            <circle cx="19" cy="13" r="2.5" fill="white" opacity="0.9"/>
+            <path d="M6 32H32" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="sidebar-brand-text">
+          <div class="sidebar-brand-arabic">مدرسة الأروفي</div>
+          <div class="sidebar-brand-sub">ERP System</div>
+        </div>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="user-display-name">Memuat...</div>
+          <div class="sidebar-user-role"  id="user-display-role">—</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebarNav"></nav>
+
+      <div class="sidebar-footer">
+        <button class="btn-logout" id="btnLogout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Keluar
+        </button>
+      </div>
+    </aside>
+
+    <!-- ============================================================
+         MAIN CONTENT
+    ============================================================ -->
+    <main class="main-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-title">Data Siswa</div>
+        <div class="page-subtitle">Manajemen data seluruh siswa pesantren</div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <!-- Search -->
+          <input type="text" id="filterSearch" class="filter-input"
+                 placeholder="Cari nama / ID siswa..." />
+
+          <!-- Filter Jenjang -->
+          <select id="filterJenjang" class="filter-select">
+            <option value="">Semua Jenjang</option>
+            <option value="SMP">SMP</option>
+            <option value="SMA">SMA</option>
+          </select>
+
+          <!-- Filter Kelas -->
+          <select id="filterKelas" class="filter-select">
+            <option value="">Semua Kelas</option>
+          </select>
+
+          <!-- Filter Program -->
+          <select id="filterProgram" class="filter-select">
+            <option value="">Semua Program</option>
+            <option value="Tahfidz">Tahfidz</option>
+            <option value="Reguler">Reguler</option>
+          </select>
+
+          <!-- Filter Status -->
+          <select id="filterStatus" class="filter-select">
+            <option value="">Semua Status</option>
+            <option value="aktif">Aktif</option>
+            <option value="nonaktif">Nonaktif</option>
+          </select>
+
+          <button class="btn-reset" id="btnReset">Reset</button>
+        </div>
+
+        <!-- Tombol Tambah (hanya admin & tu) -->
+        <button class="btn-tambah" id="btnTambah"
+                onclick="openTambah()" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Tambah Siswa
+        </button>
+      </div>
+
+      <!-- Total count -->
+      <div class="total-count">
+        Menampilkan <strong id="totalCount">0 siswa</strong>
+      </div>
+
+      <!-- ======================================================
+           TABEL — Desktop
+      ====================================================== -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID Siswa</th>
+              <th>Nama</th>
+              <th>Gender</th>
+              <th>Kelas</th>
+              <th>Jenjang</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr>
+              <td colspan="7" class="empty-cell">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ======================================================
+           CARD LIST — Mobile
+      ====================================================== -->
+      <div class="card-list" id="cardList">
+        <div class="empty-state">Memuat data...</div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Form Tambah / Edit Siswa
+  ============================================================ -->
+  <div class="modal" id="modalSiswa">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div class="modal-title" id="modalTitle">Tambah Siswa Baru</div>
+        <button class="btn-close-modal" onclick="closeModal('modalSiswa')">×</button>
+      </div>
+
+      <form id="siswaForm">
+        <div class="modal-body">
+          <div class="form-grid">
+
+            <!-- ID Siswa (auto-generate, disabled) -->
+            <div class="form-field full">
+              <label>ID Siswa</label>
+              <input type="text" id="formStudentId" class="form-control"
+                     disabled placeholder="Auto-generate" />
+              <div class="form-hint">ID dibuat otomatis oleh sistem</div>
+            </div>
+
+            <!-- Nama -->
+            <div class="form-field full">
+              <label>Nama Lengkap *</label>
+              <input type="text" id="formNama" class="form-control"
+                     placeholder="Contoh: Ahmad Fauzi" required />
+            </div>
+
+            <!-- Gender -->
+            <div class="form-field">
+              <label>Jenis Kelamin *</label>
+              <select id="formGender" class="form-control" required>
+                <option value="">-- Pilih --</option>
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </div>
+
+            <!-- Jenjang -->
+            <div class="form-field">
+              <label>Jenjang *</label>
+              <select id="formJenjang" class="form-control" required>
+                <option value="">-- Pilih --</option>
+                <option value="SMP">SMP</option>
+                <option value="SMA">SMA</option>
+              </select>
+            </div>
+
+            <!-- Kelas -->
+            <div class="form-field full">
+              <label>Kelas *</label>
+              <select id="formKelas" class="form-control" required>
+                <option value="">-- Pilih Kelas --</option>
+              </select>
+            </div>
+
+            <!-- Program -->
+            <div class="form-field">
+              <label>Program</label>
+              <select id="formProgram" class="form-control">
+                <option value="">-- Pilih --</option>
+                <option value="Tahfidz">Tahfidz</option>
+                <option value="Reguler">Reguler</option>
+              </select>
+            </div>
+
+            <!-- Saldo Jajan -->
+            <div class="form-field">
+              <label>Saldo Jajan Awal (Rp)</label>
+              <input type="number" id="formSaldo" class="form-control"
+                     placeholder="0" min="0" value="0" />
+            </div>
+
+            <!-- PIN Section (hanya saat tambah baru) -->
+            <div class="form-field full" id="pinSection">
+              <div class="pin-section">
+                <div class="pin-section-title">🔐 Set PIN Kantin</div>
+                <div class="form-grid">
+                  <div class="form-field">
+                    <label>PIN (6 Digit) *</label>
+                    <input type="password" id="formPin" class="form-control"
+                           placeholder="••••••" maxlength="6"
+                           inputmode="numeric" pattern="\d{6}" />
+                  </div>
+                </div>
+                <div class="form-hint" style="margin-top:8px">
+                  PIN digunakan untuk transaksi di kantin. Harus 6 digit angka.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <button type="button" class="btn-modal-cancel"
+                  onclick="closeModal('modalSiswa')">Batal</button>
+          <button type="submit" class="btn-modal-submit"
+                  id="btnSubmitForm">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL: Set / Reset PIN
+  ============================================================ -->
+  <div class="modal" id="modalPin">
+    <div class="modal-box" style="max-width:380px">
+      <div class="modal-head">
+        <div class="modal-title">Set / Reset PIN</div>
+        <button class="btn-close-modal" onclick="closeModal('modalPin')">×</button>
+      </div>
+
+      <form id="pinForm">
+        <div class="modal-body">
+          <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px">
+            Set PIN untuk: <strong id="pinStudentName" style="color:var(--green-deep)"></strong>
+          </p>
+          <input type="hidden" id="pinStudentId" />
+
+          <div class="form-field" style="margin-bottom:12px">
+            <label>PIN Baru (6 Digit)</label>
+            <input type="password" id="inputPin" class="form-control"
+                   placeholder="••••••" maxlength="6"
+                   inputmode="numeric" pattern="\d{6}" required />
+          </div>
+
+          <div class="form-field">
+            <label>Konfirmasi PIN</label>
+            <input type="password" id="inputPinConfirm" class="form-control"
+                   placeholder="••••••" maxlength="6"
+                   inputmode="numeric" pattern="\d{6}" required />
+          </div>
+
+          <div class="pin-error" id="pinError"></div>
+        </div>
+
+        <div class="modal-foot">
+          <button type="button" class="btn-modal-cancel"
+                  onclick="closeModal('modalPin')">Batal</button>
+          <button type="submit" class="btn-modal-submit"
+                  id="btnSubmitPin">Set PIN</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ============================================================
+       JS
+  ============================================================ -->
+  <script type="module">
+    import { logout }     from './assets/js/dashboard.js';
+    import { getSession } from './assets/js/auth-guard.js';
+
+    // Sidebar nav — reuse dari dashboard.js
+    const NAV_MENUS = {
+      admin : [
+        { label: 'MENU UTAMA' },
+        { icon: 'home',    text: 'Dashboard',     href: 'dashboard.html' },
+        { icon: 'users',   text: 'Data Siswa',    href: 'siswa.html', active: true },
+        { icon: 'grid',    text: 'Absensi Piket', href: 'piket.html' },
+        { label: 'AKADEMIK' },
+        { icon: 'file',    text: 'Nilai',         href: 'nilai.html' },
+        { label: 'KEUANGAN' },
+        { icon: 'card',    text: 'Billing',       href: 'billing.html' },
+        { icon: 'dollar',  text: 'Slip Gaji',     href: 'gaji.html' },
+        { icon: 'cart',    text: 'Kantin',        href: 'pos.html' },
+        { label: 'ADMINISTRASI' },
+        { icon: 'mail',    text: 'Surat',         href: 'surat.html' },
+        { icon: 'settings',text: 'Pengguna',      href: 'pengguna.html' },
+      ],
+      kepsek: [
+        { label: 'MENU UTAMA' },
+        { icon: 'home',  text: 'Dashboard',   href: 'dashboard.html' },
+        { icon: 'users', text: 'Data Siswa',  href: 'siswa.html', active: true },
+        { icon: 'grid',  text: 'Absensi Piket', href: 'piket.html' },
+        { label: 'AKADEMIK' },
+        { icon: 'file',  text: 'Nilai',       href: 'nilai.html' },
+        { label: 'KEUANGAN' },
+        { icon: 'card',  text: 'Billing',     href: 'billing.html' },
+        { icon: 'dollar',text: 'Slip Gaji',   href: 'gaji.html' },
+      ],
+      guru: [
+        { label: 'MENU UTAMA' },
+        { icon: 'home',  text: 'Dashboard',   href: 'dashboard.html' },
+        { icon: 'users', text: 'Data Siswa',  href: 'siswa.html', active: true },
+        { icon: 'grid',  text: 'Absensi Piket', href: 'piket.html' },
+        { label: 'AKADEMIK' },
+        { icon: 'file',  text: 'Input Nilai', href: 'nilai.html' },
+        { label: 'KEUANGAN' },
+        { icon: 'dollar',text: 'Slip Gaji',   href: 'gaji.html' },
+      ],
+      tu: [
+        { label: 'MENU UTAMA' },
+        { icon: 'home',  text: 'Dashboard',    href: 'dashboard.html' },
+        { icon: 'users', text: 'Data Siswa',   href: 'siswa.html', active: true },
+        { icon: 'grid',  text: 'Absensi Piket',href: 'piket.html' },
+        { label: 'KEUANGAN' },
+        { icon: 'card',  text: 'Billing',      href: 'billing.html' },
+        { label: 'ADMINISTRASI' },
+        { icon: 'mail',  text: 'Surat',        href: 'surat.html' },
+      ],
+    };
+
+    function renderNav(role) {
+      const menus = NAV_MENUS[role] || [];
+      document.getElementById('sidebarNav').innerHTML = menus.map(item => {
+        if (!item.icon) return `<div class="nav-label">${item.label}</div>`;
+        return `<a href="${item.href}" class="nav-item ${item.active ? 'active' : ''}">${item.text}</a>`;
+      }).join('');
+    }
+
+    const { name, role } = getSession();
+    const initial = name ? name.charAt(0).toUpperCase() : '?';
+
+    document.getElementById('sidebarAvatar').textContent = initial;
+    document.getElementById('topbarAvatar').textContent  = initial;
+    if (role) renderNav(role);
+
+    // Hamburger
+    const sidebar   = document.getElementById('sidebar');
+    const overlay   = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('btnHamburger');
+
+    hamburger.addEventListener('click', () => {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    });
+
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    });
+
+    // Logout
+    document.getElementById('btnLogout').addEventListener('click', logout);
+  </script>
+
+  <!-- Load siswa.js (module) -->
+  <script type="module" src="assets/js/siswa.js"></script>
+
+</body>
+</html>
