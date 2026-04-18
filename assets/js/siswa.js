@@ -152,8 +152,8 @@ function renderTable(data) {
         <button class="btn-aksi edit" title="Edit siswa"  onclick="openEdit('${s.student_id}')"><i class="fas fa-user-edit"></i></button>
         <button class="btn-aksi pin"  title="Edit PIN"  onclick="openPin('${s.student_id}', '${s.name}')"><i class="far fa-credit-card"></i></button>
         ${s.aktif !== false
-          ? `<button class="btn-aksi nonaktif" onclick="toggleAktif('${s.student_id}', false)" title="Nonaktifkan"><i class="fa-solid fa-toggle-off"></i></button>`
-          : `<button class="btn-aksi aktif"    onclick="toggleAktif('${s.student_id}', true)" title="Aktifkan"><i class="fa-solid fa-toggle-on"></i></button>`
+          ? `<button class="btn-aksi nonaktif" onclick="toggleAktif('${s.student_id}', false)" title="Nonaktifkan"><i class="fas fa-toggle-off"></i></button>`
+          : `<button class="btn-aksi aktif"    onclick="toggleAktif('${s.student_id}', true)" title="Aktifkan"><i class="fas fa-toggle-on"></i></button>`
         }
       </div>` : '—';
 
