@@ -149,8 +149,8 @@ function renderTable(data) {
 
     const aksiHtml = canEdit ? `
       <div class="aksi-wrap">
-        <button class="btn-aksi edit"   onclick="openEdit('${s.student_id}')">Edit</button>
-        <button class="btn-aksi pin"    onclick="openPin('${s.student_id}', '${s.name}')">PIN</button>
+        <button class="btn-aksi edit"   onclick="openEdit('${s.student_id}')">✎</button>
+        <button class="btn-aksi pin"    onclick="openPin('${s.student_id}', '${s.name}')">💳</button>
         ${s.aktif !== false
           ? `<button class="btn-aksi nonaktif" onclick="toggleAktif('${s.student_id}', false)">Nonaktifkan</button>`
           : `<button class="btn-aksi aktif"    onclick="toggleAktif('${s.student_id}', true)">Aktifkan</button>`
