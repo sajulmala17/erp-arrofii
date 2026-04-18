@@ -160,11 +160,10 @@ function renderTable(data) {
     return `
       <tr class="${s.aktif === false ? 'row-nonaktif' : ''}">
         <td><span class="student-id">${s.nisn}</span></td>
-        <td class="student-name">${s.tahun_ajaran}</td>
+        <td>${s.tahun_ajaran}</td>
 	<td class="student-name">${s.name}</td>
         <td>${s.gender === 'L' ? '👦 Laki-laki' : '👧 Perempuan'}</td>
         <td>${kelasMap[s.class_id] || s.class_id || '—'}</td>
-        <td>${s.jenjang || '—'}</td>
         <td>${statusBadge}</td>
         <td>${aksiHtml}</td>
       </tr>
@@ -193,11 +192,11 @@ function renderTable(data) {
           ${statusBadge}
         </div>
         <div class="siswa-card-body">
-          <div class="siswa-card-row">
+	<div class="siswa-card-row">
             <span>Jenjang</span><span>${s.jenjang || '—'}</span>
           </div>
           <div class="siswa-card-row">
-            <span>Program</span><span>${s.program || '—'}</span>
+            <span>Angkatan</span><span>${s.tahun_ajaran || '—'}</span>
           </div>
           <div class="siswa-card-row">
             <span>Saldo Jajan</span>
@@ -217,7 +216,7 @@ function renderTable(data) {
         </div>` : ''}
       </div>
     `;
-  }).join('');
+  }).join('';
 
   document.getElementById('cardList').innerHTML = cards;
 }
