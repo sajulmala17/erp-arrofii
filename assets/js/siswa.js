@@ -255,6 +255,7 @@ window.openEdit = function (studentId) {
   document.getElementById('formKelas').value      = siswa.class_id;
   document.getElementById('formJenjang').value    = siswa.jenjang;
   document.getElementById('formProgram').value    = siswa.program || '';
+  document.getElementById('formKamar').value      = siswa.kamar || '';
   document.getElementById('formSaldo').value      = siswa.saldo_jajan || 0;
 
   openModal('modalSiswa');
@@ -306,6 +307,7 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
   const classId   = document.getElementById('formKelas').value;
   const jenjang   = document.getElementById('formJenjang').value;
   const program   = document.getElementById('formProgram').value.trim();
+  const kamar     = document.getElementById('formKamar')?.value.trim() || '';
   const saldo     = Number(document.getElementById('formSaldo').value) || 0;
   const pin       = document.getElementById('formPin')?.value;
 
@@ -333,6 +335,7 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
         class_id  : classId,
         jenjang,
         program,
+	kamar : kamar,
         saldo_jajan: saldo,
         updated_at: serverTimestamp(),
       });
@@ -357,6 +360,7 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
         class_id    : classId,
         jenjang,
         program,
+	kamar       : kamar,
         saldo_jajan : saldo,
         pin_hash    : '', // sementara kosong, langsung diset di bawah
         parent_uid  : '',
