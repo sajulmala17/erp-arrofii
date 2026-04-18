@@ -144,13 +144,13 @@ function renderTable(data) {
 
   const rows = data.map(s => {
     const statusBadge = s.aktif === false
-      ? '<span class="badge badge-nonaktif"><i class='fas fa-user-times' style='color:red'></i></span>'
-      : '<span class="badge badge-aktif"><i class='fas fa-user-check' style='color:green'></i></span>';
+      ? '<span class="badge badge-nonaktif"><i class="fas fa-user-times" style="color:red"></i></span>'
+      : '<span class="badge badge-aktif"><i class="fas fa-user-check" style="color:green"></i></span>';
 
     const aksiHtml = canEdit ? `
       <div class="aksi-wrap">
-        <button class="btn-aksi edit" title="Edit siswa"  onclick="openEdit('${s.student_id}')"><i class='fas fa-user-edit'></i></button>
-        <button class="btn-aksi pin"  title="Edit PIN"  onclick="openPin('${s.student_id}', '${s.name}')"><i class='far fa-credit-card'></i></button>
+        <button class="btn-aksi edit" title="Edit siswa"  onclick="openEdit('${s.student_id}')"><i class="fas fa-user-edit"></i></button>
+        <button class="btn-aksi pin"  title="Edit PIN"  onclick="openPin('${s.student_id}', '${s.name}')"><i class="far fa-credit-card"></i></button>
         ${s.aktif !== false
           ? `<button class="btn-aksi nonaktif" onclick="toggleAktif('${s.student_id}', false)">Nonaktifkan</button>`
           : `<button class="btn-aksi aktif"    onclick="toggleAktif('${s.student_id}', true)">Aktifkan</button>`
@@ -176,8 +176,8 @@ function renderTable(data) {
   const cards = data.map(s => {
     const kelasNama = kelasMap[s.class_id] || s.class_id || '—';
     const statusBadge = s.aktif === false
-      ? '<span class="badge badge-nonaktif"><i class='fas fa-user-times' style='color:red'></i></span>'
-      : '<span class="badge badge-aktif"><i class='fas fa-user-check' style='color:green'></i></span>';
+      ? '<span class="badge badge-nonaktif"><i class="fas fa-user-times" style="color:red"></i></span>'
+      : '<span class="badge badge-aktif"><i class="fas fa-user-check" style="color:green"></i></span>';
 
     return `
       <div class="siswa-card ${s.aktif === false ? 'card-nonaktif' : ''}">
