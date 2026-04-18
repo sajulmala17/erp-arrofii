@@ -216,7 +216,7 @@ function renderTable(data) {
         </div>` : ''}
       </div>
     `;
-  }).join('';
+  }).join('');
 
   document.getElementById('cardList').innerHTML = cards;
 }
@@ -317,7 +317,7 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
       return;
   }
   // Validasi
-  if (!nisn || !tahun_ajaran || !nama || !gender || !classId || !jenjang) {
+  if (!nisn || !tahunAjaran || !nama || !gender || !classId || !jenjang) {
     showToast('Lengkapi semua field yang wajib diisi.', 'error');
     return;
   }
