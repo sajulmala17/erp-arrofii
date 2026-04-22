@@ -1,13 +1,6 @@
 // ============================================================
 // dashboard.js
 // Logika utama dashboard — menampilkan konten sesuai role
-//
-// Cara kerja:
-//   1. Guard halaman — pastikan user sudah login
-//   2. Ambil role dari session
-//   3. Sembunyikan semua section
-//   4. Tampilkan hanya section yang sesuai role
-//   5. Render data spesifik per role
 // ============================================================
 
 import { auth, getToken }          from './firebase-config.js';
@@ -24,23 +17,11 @@ import { getFirestore,
          orderBy,
          limit }                   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-// ============================================================
-// INISIALISASI
-// ============================================================
 const db = getFirestore();
-
-// Guard — semua role boleh masuk dashboard
 guardPage([]);
 
-// ============================================================
-// KONSTANTA — URL Cloud Functions
-// Sesuaikan dengan region project Anda
-// ============================================================
 const CF_BASE_URL = 'https://us-central1-er-arrofii.cloudfunctions.net/api';
 
-// ============================================================
-// HELPER: Fetch ke Cloud Functions dengan token otomatis
-// ============================================================
 async function apiFetch(endpoint, method = 'GET', body = null) {
   const token = await getToken();
   const opts  = {
@@ -55,9 +36,6 @@ async function apiFetch(endpoint, method = 'GET', body = null) {
   return await res.json();
 }
 
-// ============================================================
-// HELPER: Format Rupiah
-// ============================================================
 function formatRupiah(angka) {
   return new Intl.NumberFormat('id-ID', {
     style   : 'currency',
@@ -66,9 +44,6 @@ function formatRupiah(angka) {
   }).format(angka);
 }
 
-// ============================================================
-// HELPER: Format Tanggal
-// ============================================================
 function formatTanggal(timestamp) {
   if (!timestamp) return '-';
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -79,12 +54,10 @@ function formatTanggal(timestamp) {
   }).format(date);
 }
 
-// ============================================================
-// HELPER: Hitung Status Tagihan berdasarkan due_date
-// Return: 'lunas' | 'telat-30' | 'tunggakan' | 'belum-bayar'
-// ============================================================
+// [FIX] Tambah null/undefined guard untuk dueDate
 function getStatusTagihan(status, dueDate) {
   if (status === 'lunas') return 'lunas';
+  if (!dueDate) return 'belum-bayar'; // [FIX] guard dueDate null
   const now      = new Date();
   const due      = dueDate.toDate ? dueDate.toDate() : new Date(dueDate);
   const diffHari = Math.floor((now - due) / (1000 * 60 * 60 * 24));
@@ -93,20 +66,18 @@ function getStatusTagihan(status, dueDate) {
   return 'belum-bayar';
 }
 
-// ============================================================
-// SEMBUNYIKAN SEMUA SECTION
-// ============================================================
 function hideAllSections() {
   document.querySelectorAll('.role-section').forEach(el => {
     el.style.display = 'none';
   });
 }
 
-// ============================================================
-// TAMPILKAN SECTION SESUAI ROLE
-// ============================================================
+// Kepsek dan admin menggunakan section yang sama.
+const SECTION_MAP = { kepsek: 'admin' };
+
 function showSection(role) {
-  const section = document.getElementById(`section-${role}`);
+  const sectionId = SECTION_MAP[role] || role;
+  const section   = document.getElementById(`section-${sectionId}`);
   if (section) {
     section.style.display = 'block';
   } else {
@@ -116,28 +87,22 @@ function showSection(role) {
 
 // ============================================================
 // RENDER: ADMIN
-// Tampilkan ringkasan: total siswa, tagihan pending,
-// total guru, dan transaksi kantin hari ini
 // ============================================================
 async function renderAdmin() {
   try {
-    // Total siswa
     const studentsSnap = await getDocs(collection(db, 'students'));
     setEl('admin-total-siswa', studentsSnap.size);
 
-    // Total guru
     const guruSnap = await getDocs(
       query(collection(db, 'users'), where('role', '==', 'guru'))
     );
     setEl('admin-total-guru', guruSnap.size);
 
-    // Tagihan belum lunas
     const billingSnap = await getDocs(
       query(collection(db, 'billing'), where('status', '==', 'belum_bayar'))
     );
     setEl('admin-tagihan-pending', billingSnap.size);
 
-    // Transaksi kantin hari ini
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     const txSnap = await getDocs(
@@ -158,18 +123,28 @@ async function renderAdmin() {
 
 // ============================================================
 // RENDER: KEPSEK
-// Tampilkan ringkasan akademik & keuangan (read-only)
+// Kepsek memakai section-admin (SECTION_MAP), sehingga cukup
+// panggil renderAdmin() untuk data bersama, lalu tambahkan
+// stat eksklusif kepsek (nilai draft) dan tampilkan card-nya.
 // ============================================================
 async function renderKepsek() {
   try {
-    // Reuse data admin untuk ringkasan
+    // Set judul sesuai role kepsek
+    setEl('admin-page-title',    'Dashboard Kepala Sekolah');
+    setEl('admin-page-subtitle', 'Monitoring akademik & keuangan');
+
+    // Render semua stat yang sama dengan admin
     await renderAdmin();
 
-    // Nilai yang masih draft (perlu perhatian)
+    // Tambahan eksklusif kepsek: nilai masih draft
     const draftSnap = await getDocs(
       query(collection(db, 'grades'), where('status', '==', 'draft'))
     );
-    setEl('kepsek-nilai-draft', draftSnap.size);
+    setEl('admin-nilai-draft', draftSnap.size);
+
+    // Tampilkan stat card nilai draft (hidden by default)
+    const draftCard = document.getElementById('kepsek-card-nilai-draft');
+    if (draftCard) draftCard.style.display = '';
 
   } catch (err) {
     console.error('[renderKepsek] Error:', err);
@@ -178,11 +153,9 @@ async function renderKepsek() {
 
 // ============================================================
 // RENDER: GURU
-// Tampilkan daftar kelas & mapel yang diajar + rekap absensi
 // ============================================================
 async function renderGuru(uid) {
   try {
-    // Query teacher_subjects milik guru ini
     const tsSnap = await getDocs(
       query(
         collection(db, 'teacher_subjects'),
@@ -195,7 +168,6 @@ async function renderGuru(uid) {
       return;
     }
 
-    // Kumpulkan class_id & subject_id unik
     const kelasMapel = [];
     const classIds   = new Set();
     const subjectIds = new Set();
@@ -206,21 +178,18 @@ async function renderGuru(uid) {
       subjectIds.add(d.data().subject_id);
     });
 
-    // Fetch nama kelas
     const classMap = {};
     for (const id of classIds) {
       const snap = await getDoc(doc(db, 'classes', id));
       if (snap.exists()) classMap[id] = snap.data().name;
     }
 
-    // Fetch nama mapel
     const subjectMap = {};
     for (const id of subjectIds) {
       const snap = await getDoc(doc(db, 'subjects', id));
       if (snap.exists()) subjectMap[id] = snap.data().name;
     }
 
-    // Render tabel kelas & mapel
     const rows = kelasMapel.map(item => `
       <tr>
         <td>${classMap[item.class_id]   || item.class_id}</td>
@@ -255,12 +224,10 @@ async function renderGuru(uid) {
 }
 
 // ============================================================
-// RENDER: TU (Tata Usaha)
-// Tampilkan daftar surat terbaru + ringkasan billing
+// RENDER: TU
 // ============================================================
 async function renderTU(uid) {
   try {
-    // Surat terbaru (10 terakhir)
     const suratSnap = await getDocs(
       query(
         collection(db, 'letters'),
@@ -301,7 +268,6 @@ async function renderTU(uid) {
       `);
     }
 
-    // Ringkasan billing belum bayar
     const billingSnap = await getDocs(
       query(collection(db, 'billing'), where('status', '==', 'belum_bayar'))
     );
@@ -314,14 +280,12 @@ async function renderTU(uid) {
 
 // ============================================================
 // RENDER: KANTIN
-// Tampilkan transaksi hari ini secara realtime (onSnapshot)
 // ============================================================
 function renderKantin() {
   try {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    // Realtime listener untuk transaksi hari ini
     const q = query(
       collection(db, 'pos_transactions'),
       where('timestamp', '>=', startOfDay),
@@ -340,13 +304,11 @@ function renderKantin() {
       setEl('kantin-total-hari-ini', formatRupiah(totalHariIni));
       setEl('kantin-jumlah-tx', snap.size);
 
-      // Render tabel transaksi
       if (snap.empty) {
         setEl('kantin-tx-list', '<p class="empty-state">Belum ada transaksi hari ini.</p>');
         return;
       }
 
-      // Fetch nama siswa
       const studentMap = {};
       for (const id of studentIds) {
         const sSnap = await getDoc(doc(db, 'students', id));
@@ -390,13 +352,11 @@ function renderKantin() {
 
 // ============================================================
 // RENDER: ORTU
-// Tampilkan info anak: saldo jajan & tagihan
 // ============================================================
 async function renderOrtu() {
   try {
     const { uid } = getSession();
 
-    // Ambil data parent untuk dapatkan student_ids
     const parentDoc = await getDoc(doc(db, 'users', uid));
     if (!parentDoc.exists()) return;
 
@@ -414,7 +374,6 @@ async function renderOrtu() {
 
       const siswa = studentDoc.data();
 
-      // Ambil tagihan siswa ini
       const billingSnap = await getDocs(
         query(
           collection(db, 'billing'),
@@ -470,17 +429,11 @@ async function renderOrtu() {
   }
 }
 
-// ============================================================
-// HELPER: Set innerHTML elemen by ID
-// ============================================================
 function setEl(id, value) {
   const el = document.getElementById(id);
   if (el) el.innerHTML = value;
 }
 
-// ============================================================
-// HELPER: Label status tagihan
-// ============================================================
 function labelStatus(status) {
   const map = {
     'lunas'     : 'Lunas',
@@ -491,25 +444,17 @@ function labelStatus(status) {
   return map[status] || status;
 }
 
-// ============================================================
-// MAIN — Jalankan setelah auth state siap
-// ============================================================
 onAuthStateChanged(auth, async (user) => {
-  if (!user) return; // auth-guard sudah handle redirect
+  if (!user) return;
 
   const { role, name, uid } = getSession();
 
-  // Tampilkan nama user di navbar
   setEl('user-display-name', name);
   setEl('user-display-role', labelRole(role));
 
-  // Sembunyikan semua section dulu
   hideAllSections();
-
-  // Tampilkan section sesuai role
   showSection(role);
 
-  // Render konten sesuai role
   switch (role) {
     case 'admin'  : await renderAdmin();       break;
     case 'kepsek' : await renderKepsek();      break;
@@ -522,9 +467,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ============================================================
-// HELPER: Label role yang ramah
-// ============================================================
 function labelRole(role) {
   const map = {
     admin  : 'Administrator',
@@ -537,7 +479,4 @@ function labelRole(role) {
   return map[role] || role;
 }
 
-// ============================================================
-// EKSPOR logout untuk dipakai tombol navbar
-// ============================================================
 export { logout, apiFetch, formatRupiah, formatTanggal };

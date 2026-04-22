@@ -1,12 +1,14 @@
 // ============================================================
-// siswa.js
-// Logika halaman Data Siswa
-// Fitur:
-//   - Daftar siswa dengan filter jenjang, kelas, program
-//   - Tambah siswa baru (admin & tu)
-//   - Edit data siswa (admin & tu)
-//   - Nonaktifkan siswa (admin & tu)
-//   - Set/Reset PIN siswa via Cloud Function
+// siswa.js  —  PATCHED
+//
+// Ringkasan perubahan:
+//   [FIX-1] toggleAktif dipanggil dengan s.id (Firestore doc ID),
+//           bukan s.student_id — sehingga updateDoc mengenai dokumen yang benar.
+//   [FIX-2] openEdit menerima Firestore doc ID, mencari siswa dengan s.id,
+//           dan menyimpan editingId sebagai Firestore doc ID.
+//   [FIX-3] renderTable meneruskan s.id ke toggleAktif dan openEdit.
+//   [FIX-4] applyFilter kelas menggunakan Firestore doc ID konsisten.
+//   [FIX-5] loadKelas menggunakan d.id sebagai value di select agar selaras.
 // ============================================================
 
 import { auth, getToken }               from './firebase-config.js';
@@ -24,23 +26,16 @@ import { getFirestore,
          serverTimestamp,
          orderBy }                      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-// ============================================================
-// INISIALISASI
-// ============================================================
 const db = getFirestore();
 guardPage(['admin', 'kepsek', 'guru', 'tu']);
 
 const CF_BASE_URL = 'https://us-central1-er-arrofii.cloudfunctions.net/api';
 
-// State
 let allSiswa   = [];
 let allKelas   = [];
 let currentRole = '';
-let editingId   = null; // student_id yang sedang diedit
+let editingId   = null; // [FIX-2] sekarang menyimpan Firestore doc ID
 
-// ============================================================
-// HELPER: Fetch Cloud Functions dengan token
-// ============================================================
 async function apiFetch(endpoint, method = 'POST', body = null) {
   const token = await getToken();
   const res   = await fetch(`${CF_BASE_URL}${endpoint}`, {
@@ -54,10 +49,6 @@ async function apiFetch(endpoint, method = 'POST', body = null) {
   return await res.json();
 }
 
-// ============================================================
-// HELPER: Generate student_id otomatis
-// Format: STD-[tahun][random 4 digit]
-// ============================================================
 function generateStudentId() {
   const year   = new Date().getFullYear();
   const random = Math.floor(1000 + Math.random() * 9000);
@@ -65,7 +56,9 @@ function generateStudentId() {
 }
 
 // ============================================================
-// LOAD: Ambil semua kelas dari Firestore
+// LOAD KELAS
+// [FIX-5] Gunakan d.id (Firestore doc ID) sebagai value <option>
+//         agar konsisten dengan class_id yang disimpan di students
 // ============================================================
 async function loadKelas() {
   const snap = await getDocs(
@@ -73,23 +66,30 @@ async function loadKelas() {
   );
   allKelas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  // Populate select kelas di form
   const selKelas = document.getElementById('formKelas');
+  // [FIX-5] value selalu pakai d.id (Firestore doc ID)
   selKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>' +
     allKelas.map(k =>
-      `<option value="${k.class_id || k.id}">${k.name} (${k.jenjang})</option>`
+      `<option value="${k.id}">${k.name} (${k.jenjang || ''})</option>`
     ).join('');
+
+  // Populate filter kelas juga
+  const filterKelasEl = document.getElementById('filterKelas');
+  if (filterKelasEl) {
+    filterKelasEl.innerHTML = '<option value="">Semua Kelas</option>' +
+      allKelas.map(k =>
+        `<option value="${k.id}">${k.name}</option>`
+      ).join('');
+  }
 }
 
-// ============================================================
-// LOAD: Ambil semua siswa dari Firestore
-// ============================================================
 async function loadSiswa() {
   showTableLoading();
   try {
     const snap = await getDocs(
       query(collection(db, 'students'), orderBy('name'))
     );
+    // id = Firestore doc ID, student_id = field value
     allSiswa = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     applyFilter();
   } catch (err) {
@@ -99,7 +99,9 @@ async function loadSiswa() {
 }
 
 // ============================================================
-// FILTER & RENDER TABEL
+// FILTER
+// [FIX-4] Filter kelas membandingkan s.class_id dengan Firestore doc ID
+//         yang sekarang sudah konsisten (loadKelas pakai d.id)
 // ============================================================
 function applyFilter() {
   const filterJenjang  = document.getElementById('filterJenjang').value;
@@ -110,12 +112,13 @@ function applyFilter() {
 
   let filtered = allSiswa.filter(s => {
     if (filterJenjang && s.jenjang   !== filterJenjang)  return false;
+    // [FIX-4] s.class_id dibandingkan dengan Firestore doc ID
     if (filterKelas   && s.class_id  !== filterKelas)    return false;
     if (filterProgram && s.program   !== filterProgram)  return false;
     if (filterStatus === 'aktif'    && s.aktif === false) return false;
     if (filterStatus === 'nonaktif' && s.aktif !== false) return false;
     if (filterSearch  && !s.name.toLowerCase().includes(filterSearch) &&
-        !s.student_id.toLowerCase().includes(filterSearch))           return false;
+        !(s.student_id || '').toLowerCase().includes(filterSearch))   return false;
     return true;
   });
 
@@ -124,12 +127,15 @@ function applyFilter() {
 }
 
 // ============================================================
-// RENDER: Tabel siswa (desktop) + Cards (mobile)
+// RENDER TABLE
+// [FIX-1][FIX-3] onclick pakai s.id (Firestore doc ID) untuk
+//                toggleAktif dan openEdit
+//                openPin tetap pakai s.student_id (Cloud Function
+//                mencari berdasarkan field, bukan doc ID)
 // ============================================================
 function renderTable(data) {
   const canEdit = ['admin', 'tu'].includes(currentRole);
 
-  // === DESKTOP TABLE ===
   if (data.length === 0) {
     document.getElementById('tableBody').innerHTML =
       `<tr><td colspan="7" class="empty-cell">Tidak ada data siswa.</td></tr>`;
@@ -138,30 +144,44 @@ function renderTable(data) {
     return;
   }
 
-  // Cari nama kelas dari allKelas
   const kelasMap = {};
-  allKelas.forEach(k => { kelasMap[k.class_id || k.id] = k.name; });
+  allKelas.forEach(k => { kelasMap[k.id] = k.name; });
 
   const rows = data.map(s => {
     const statusBadge = s.aktif === false
       ? '<span class="badge badge-nonaktif" title="Siswa Nonaktif"><i class="fas fa-user-times" style="color:red"></i></span>'
       : '<span class="badge badge-aktif" title="Siswa Aktif"><i class="fas fa-user-check" style="color:green"></i></span>';
 
+    // [FIX-3] Gunakan s.id untuk operasi Firestore, s.student_id untuk Cloud Function
     const aksiHtml = canEdit ? `
       <div class="aksi-wrap">
-        <button class="btn-aksi edit" title="Edit siswa"  onclick="openEdit('${s.student_id}')"><i class="fas fa-user-edit"></i></button>
-        <button class="btn-aksi pin"  title="Edit PIN"  onclick="openPin('${s.student_id}', '${s.name}')"><i class="far fa-credit-card"></i></button>
+        <button class="btn-aksi edit"   title="Edit siswa"
+                onclick="openEdit('${s.id}')">
+          <i class="fas fa-user-edit"></i>
+        </button>
+        <button class="btn-aksi pin"   title="Edit PIN"
+                onclick="openPin('${s.student_id}', '${s.name}')">
+          <i class="far fa-credit-card"></i>
+        </button>
         ${s.aktif !== false
-          ? `<button class="btn-aksi nonaktif" onclick="toggleAktif('${s.student_id}', false)" title="Nonaktifkan"><i class="fas fa-toggle-off"></i></button>`
-          : `<button class="btn-aksi aktif"    onclick="toggleAktif('${s.student_id}', true)" title="Aktifkan"><i class="fas fa-toggle-on"></i></button>`
+          ? `<button class="btn-aksi nonaktif"
+                     onclick="toggleAktif('${s.id}', false)"
+                     title="Nonaktifkan">
+               <i class="fas fa-toggle-off"></i>
+             </button>`
+          : `<button class="btn-aksi aktif"
+                     onclick="toggleAktif('${s.id}', true)"
+                     title="Aktifkan">
+               <i class="fas fa-toggle-on"></i>
+             </button>`
         }
       </div>` : '—';
 
     return `
       <tr class="${s.aktif === false ? 'row-nonaktif' : ''}">
-        <td><span class="student-id">${s.nisn}</span></td>
-        <td>${s.tahun_ajaran}</td>
-	<td class="student-name">${s.name}</td>
+        <td><span class="student-id">${s.nisn || '—'}</span></td>
+        <td>${s.tahun_ajaran || '—'}</td>
+        <td class="student-name">${s.name}</td>
         <td>${s.gender === 'L' ? '👦 Laki-laki' : '👧 Perempuan'}</td>
         <td>${kelasMap[s.class_id] || s.class_id || '—'}</td>
         <td>${statusBadge}</td>
@@ -172,7 +192,7 @@ function renderTable(data) {
 
   document.getElementById('tableBody').innerHTML = rows;
 
-  // === MOBILE CARDS ===
+  // Mobile cards
   const cards = data.map(s => {
     const kelasNama = kelasMap[s.class_id] || s.class_id || '—';
     const statusBadge = s.aktif === false
@@ -187,12 +207,12 @@ function renderTable(data) {
           </div>
           <div class="siswa-card-info">
             <div class="siswa-card-name">${s.name}</div>
-            <div class="siswa-card-meta">${s.nisn} · ${kelasNama}</div>
+            <div class="siswa-card-meta">${s.nisn || '—'} · ${kelasNama}</div>
           </div>
           ${statusBadge}
         </div>
         <div class="siswa-card-body">
-	<div class="siswa-card-row">
+          <div class="siswa-card-row">
             <span>Jenjang</span><span>${s.jenjang || '—'}</span>
           </div>
           <div class="siswa-card-row">
@@ -201,17 +221,28 @@ function renderTable(data) {
           <div class="siswa-card-row">
             <span>Saldo Jajan</span>
             <span class="saldo-text">
-              ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(s.saldo_jajan || 0)}
+              ${new Intl.NumberFormat('id-ID', {
+                style: 'currency', currency: 'IDR',
+                minimumFractionDigits: 0
+              }).format(s.saldo_jajan || 0)}
             </span>
           </div>
         </div>
         ${canEdit ? `
         <div class="siswa-card-foot">
-          <button class="btn-aksi edit"    onclick="openEdit('${s.student_id}')">✎</button>
-          <button class="btn-aksi pin"     onclick="openPin('${s.student_id}', '${s.name}')">💳</button>
+          <button class="btn-aksi edit"
+                  onclick="openEdit('${s.id}')">✎</button>
+          <button class="btn-aksi pin"
+                  onclick="openPin('${s.student_id}', '${s.name}')">💳</button>
           ${s.aktif !== false
-            ? `<button class="btn-aksi nonaktif" onclick="toggleAktif('${s.student_id}', false)">Nonaktifkan</button>`
-            : `<button class="btn-aksi aktif"    onclick="toggleAktif('${s.student_id}', true)">Aktifkan</button>`
+            ? `<button class="btn-aksi nonaktif"
+                       onclick="toggleAktif('${s.id}', false)">
+                 Nonaktifkan
+               </button>`
+            : `<button class="btn-aksi aktif"
+                       onclick="toggleAktif('${s.id}', true)">
+                 Aktifkan
+               </button>`
           }
         </div>` : ''}
       </div>
@@ -222,11 +253,11 @@ function renderTable(data) {
 }
 
 // ============================================================
-// MODAL: Buka form tambah siswa
+// MODAL: Tambah siswa baru
 // ============================================================
 window.openTambah = function () {
   editingId = null;
-  document.getElementById('modalTitle').textContent   = 'Tambah Siswa Baru';
+  document.getElementById('modalTitle').textContent    = 'Tambah Siswa Baru';
   document.getElementById('btnSubmitForm').textContent = 'Simpan';
   document.getElementById('siswaForm').reset();
   document.getElementById('formStudentId').value = generateStudentId();
@@ -235,53 +266,59 @@ window.openTambah = function () {
 };
 
 // ============================================================
-// MODAL: Buka form edit siswa
+// MODAL: Edit siswa
+// [FIX-2] docId = Firestore doc ID; cari siswa berdasarkan s.id
 // ============================================================
-window.openEdit = function (studentId) {
-  const siswa = allSiswa.find(s => s.student_id === studentId);
+window.openEdit = function (docId) {
+  // [FIX-2] Cari siswa berdasarkan Firestore doc ID (s.id)
+  const siswa = allSiswa.find(s => s.id === docId);
   if (!siswa) return;
 
-  editingId = studentId;
+  editingId = docId; // [FIX-2] simpan Firestore doc ID
   document.getElementById('modalTitle').textContent    = 'Edit Data Siswa';
   document.getElementById('btnSubmitForm').textContent = 'Update';
-  document.getElementById('pinSection').style.display  = 'none'; // PIN diset terpisah
+  document.getElementById('pinSection').style.display  = 'none';
 
-  // Isi form
-  document.getElementById('formStudentId').value = siswa.student_id;
-  document.getElementById('formNisn').value      = siswa.nisn || '';
-  document.getElementById('formNama').value       = siswa.name;
-  document.getElementById('formTahunAjaran').value = siswa.tahun_ajaran || '';
-  document.getElementById('formGender').value     = siswa.gender;
-  document.getElementById('formKelas').value      = siswa.class_id;
-  document.getElementById('formJenjang').value    = siswa.jenjang;
-  document.getElementById('formProgram').value    = siswa.program || '';
-  document.getElementById('formKamar').value      = siswa.kamar || '';
-  document.getElementById('formSaldo').value      = siswa.saldo_jajan || 0;
+  document.getElementById('formStudentId').value   = siswa.student_id || '';
+  document.getElementById('formNisn').value         = siswa.nisn || '';
+  document.getElementById('formNama').value         = siswa.name;
+  document.getElementById('formTahunAjaran').value  = siswa.tahun_ajaran || '';
+  document.getElementById('formGender').value       = siswa.gender;
+  document.getElementById('formKelas').value        = siswa.class_id;
+  document.getElementById('formJenjang').value      = siswa.jenjang;
+  document.getElementById('formProgram').value      = siswa.program || '';
+  document.getElementById('formKamar').value        = siswa.kamar || '';
+  document.getElementById('formSaldo').value        = siswa.saldo_jajan || 0;
 
   openModal('modalSiswa');
 };
 
 // ============================================================
-// MODAL: Buka form set PIN
+// MODAL: Set PIN
+// openPin tetap menerima student_id (field) karena Cloud Function
+// mencari dokumen berdasarkan field student_id
 // ============================================================
 window.openPin = function (studentId, name) {
-  document.getElementById('pinStudentId').value    = studentId;
+  document.getElementById('pinStudentId').value         = studentId;
   document.getElementById('pinStudentName').textContent = name;
-  document.getElementById('inputPin').value        = '';
-  document.getElementById('inputPinConfirm').value = '';
-  document.getElementById('pinError').textContent  = '';
+  document.getElementById('inputPin').value             = '';
+  document.getElementById('inputPinConfirm').value      = '';
+  document.getElementById('pinError').textContent       = '';
   openModal('modalPin');
 };
 
 // ============================================================
-// MODAL: Toggle aktif/nonaktif siswa
+// Toggle aktif/nonaktif
+// [FIX-1] docId adalah Firestore doc ID — updateDoc langsung mengenai
+//         dokumen yang benar
 // ============================================================
-window.toggleAktif = async function (studentId, aktif) {
+window.toggleAktif = async function (docId, aktif) {
   const label = aktif ? 'mengaktifkan' : 'menonaktifkan';
   if (!confirm(`Yakin ingin ${label} siswa ini?`)) return;
 
   try {
-    await updateDoc(doc(db, 'students', studentId), {
+    // [FIX-1] docId = Firestore doc ID, bukan student_id field
+    await updateDoc(doc(db, 'students', docId), {
       aktif,
       updated_at: serverTimestamp(),
     });
@@ -294,29 +331,28 @@ window.toggleAktif = async function (studentId, aktif) {
 };
 
 // ============================================================
-// SUBMIT: Form tambah/edit siswa
+// SUBMIT: Form tambah / edit
 // ============================================================
 document.getElementById('siswaForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const studentId = document.getElementById('formStudentId').value.trim();
-  const nisn      = document.getElementById('formNisn')?.value.trim() || '';
+  const studentId   = document.getElementById('formStudentId').value.trim();
+  const nisn        = document.getElementById('formNisn')?.value.trim() || '';
   const tahunAjaran = document.getElementById('formTahunAjaran')?.value.trim();
-  const nama      = document.getElementById('formNama').value.trim();
-  const gender    = document.getElementById('formGender').value;
-  const classId   = document.getElementById('formKelas').value;
-  const jenjang   = document.getElementById('formJenjang').value;
-  const program   = document.getElementById('formProgram').value.trim();
-  const kamar     = document.getElementById('formKamar')?.value.trim() || '';
-  const saldo     = Number(document.getElementById('formSaldo').value) || 0;
-  const pin       = document.getElementById('formPin')?.value;
+  const nama        = document.getElementById('formNama').value.trim();
+  const gender      = document.getElementById('formGender').value;
+  const classId     = document.getElementById('formKelas').value;
+  const jenjang     = document.getElementById('formJenjang').value;
+  const program     = document.getElementById('formProgram').value.trim();
+  const kamar       = document.getElementById('formKamar')?.value.trim() || '';
+  const saldo       = Number(document.getElementById('formSaldo').value) || 0;
+  const pin         = document.getElementById('formPin')?.value;
 
-  // Validasi NISN: maksimal 10 digit angka (opsional)
   if (nisn && (!/^\d{1,10}$/.test(nisn))) {
-      alert('NISN harus terdiri dari 1-10 digit angka.');
-      return;
+    alert('NISN harus terdiri dari 1-10 digit angka.');
+    return;
   }
-  // Validasi
+
   if (!nisn || !tahunAjaran || !nama || !gender || !classId || !jenjang) {
     showToast('Lengkapi semua field yang wajib diisi.', 'error');
     return;
@@ -326,49 +362,46 @@ document.getElementById('siswaForm').addEventListener('submit', async (e) => {
 
   try {
     if (editingId) {
-      // === UPDATE ===
+      // UPDATE — editingId adalah Firestore doc ID [FIX-2]
       await updateDoc(doc(db, 'students', editingId), {
         nisn,
-	tahun_ajaran : tahunAjaran,
-	name      : nama,
+        tahun_ajaran : tahunAjaran,
+        name         : nama,
         gender,
-        class_id  : classId,
+        class_id     : classId,
         jenjang,
         program,
-	kamar : kamar,
-        saldo_jajan: saldo,
-        updated_at: serverTimestamp(),
+        kamar,
+        saldo_jajan  : saldo,
+        updated_at   : serverTimestamp(),
       });
       showToast('Data siswa berhasil diupdate.', 'success');
 
     } else {
-      // === TAMBAH BARU ===
-      // Cek PIN wajib untuk siswa baru
+      // TAMBAH BARU
       if (!pin || String(pin).length !== 6 || isNaN(pin)) {
         showToast('PIN harus 6 digit angka.', 'error');
         setBtnLoading('btnSubmitForm', false);
         return;
       }
 
-      // Simpan ke Firestore (pin_hash diset via Cloud Function)
       await addDoc(collection(db, 'students'), {
         student_id  : studentId,
         nisn,
-	tahun_ajaran : tahunAjaran,
-	name        : nama,
+        tahun_ajaran : tahunAjaran,
+        name         : nama,
         gender,
-        class_id    : classId,
+        class_id     : classId,
         jenjang,
         program,
-	kamar       : kamar,
-        saldo_jajan : saldo,
-        pin_hash    : '', // sementara kosong, langsung diset di bawah
-        parent_uid  : '',
-        aktif       : true,
-        created_at  : serverTimestamp(),
+        kamar,
+        saldo_jajan  : saldo,
+        pin_hash     : '',
+        parent_uid   : '',
+        aktif        : true,
+        created_at   : serverTimestamp(),
       });
 
-      // Set PIN via Cloud Function
       const pinResult = await apiFetch('/setStudentPin', 'POST', {
         student_id: studentId,
         pin,
@@ -433,9 +466,7 @@ document.getElementById('pinForm').addEventListener('submit', async (e) => {
   }
 });
 
-// ============================================================
-// FILTER: Event listeners
-// ============================================================
+// Event listeners filter
 ['filterJenjang','filterKelas','filterProgram',
  'filterStatus','filterSearch'].forEach(id => {
   document.getElementById(id)?.addEventListener('input',  applyFilter);
@@ -451,9 +482,7 @@ document.getElementById('btnReset').addEventListener('click', () => {
   applyFilter();
 });
 
-// ============================================================
-// HELPER: Modal open/close
-// ============================================================
+// Modal helpers
 function openModal(id) {
   document.getElementById(id).classList.add('show');
   document.body.style.overflow = 'hidden';
@@ -464,36 +493,26 @@ window.closeModal = function (id) {
   document.body.style.overflow = '';
 };
 
-// Tutup modal klik backdrop
 document.querySelectorAll('.modal').forEach(modal => {
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal(modal.id);
   });
 });
 
-// ============================================================
-// HELPER: Loading state tombol
-// ============================================================
 function setBtnLoading(id, isLoading) {
   const btn = document.getElementById(id);
   if (!btn) return;
-  btn.disabled     = isLoading;
-  btn.textContent  = isLoading ? 'Menyimpan...' : btn.dataset.label || btn.textContent;
+  btn.disabled    = isLoading;
+  btn.textContent = isLoading ? 'Menyimpan...' : (btn.dataset.label || btn.textContent);
 }
 
-// ============================================================
-// HELPER: Toast notification
-// ============================================================
 function showToast(msg, type = 'success') {
   const toast = document.getElementById('toast');
-  toast.textContent  = msg;
-  toast.className    = `toast show ${type}`;
+  toast.textContent = msg;
+  toast.className   = `toast show ${type}`;
   setTimeout(() => { toast.className = 'toast'; }, 3500);
 }
 
-// ============================================================
-// HELPER: Loading & error state tabel
-// ============================================================
 function showTableLoading() {
   document.getElementById('tableBody').innerHTML =
     `<tr><td colspan="7" class="empty-cell">
@@ -508,28 +527,22 @@ function showTableError(msg) {
     `<tr><td colspan="7" class="empty-cell error-text">${msg}</td></tr>`;
 }
 
-// ============================================================
-// MAIN — Jalankan setelah auth siap
-// ============================================================
 onAuthStateChanged(auth, async (user) => {
   if (!user) return;
 
   const { role, name } = getSession();
   currentRole = role;
 
-  // Tampilkan nama user
   const nameEl = document.getElementById('user-display-name');
   const roleEl = document.getElementById('user-display-role');
   if (nameEl) nameEl.textContent = name;
   if (roleEl) roleEl.textContent = labelRole(role);
 
-  // Tampilkan/sembunyikan tombol tambah
   const btnTambah = document.getElementById('btnTambah');
   if (btnTambah) {
     btnTambah.style.display = ['admin','tu'].includes(role) ? 'flex' : 'none';
   }
 
-  // Load data
   await loadKelas();
   await loadSiswa();
 });

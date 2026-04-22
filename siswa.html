@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Data Siswa — ERP Al-Arrofi</title>
-
-  <!-- CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="assets/css/global.css" />
   <link rel="stylesheet" href="assets/css/dashboard.css" />
@@ -13,9 +11,6 @@
 </head>
 <body>
 
-  <!-- ============================================================
-       TOPBAR — Mobile
-  ============================================================ -->
   <header class="topbar">
     <div class="topbar-left">
       <button class="btn-hamburger" id="btnHamburger" aria-label="Buka menu">
@@ -32,14 +27,10 @@
     </div>
   </header>
 
-  <!-- Overlay -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="app-layout">
 
-    <!-- ============================================================
-         SIDEBAR
-    ============================================================ -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-brand">
         <div class="sidebar-logo">
@@ -80,44 +71,37 @@
       </div>
     </aside>
 
-    <!-- ============================================================
-         MAIN CONTENT
-    ============================================================ -->
     <main class="main-content">
 
-      <!-- Page Header -->
       <div class="page-header">
         <div class="page-title">Data Siswa</div>
         <div class="page-subtitle">Manajemen data seluruh siswa pesantren</div>
       </div>
 
-      <!-- Toolbar -->
       <div class="toolbar">
         <div class="toolbar-left">
-          <!-- Search -->
           <input type="text" id="filterSearch" class="filter-input"
-                 placeholder="Cari nama / ID siswa..." />
+                 placeholder="Cari nama / NISN siswa..." />
 
-          <!-- Filter Jenjang -->
           <select id="filterJenjang" class="filter-select">
             <option value="">Semua Jenjang</option>
             <option value="SMP">SMP</option>
             <option value="SMA">SMA</option>
           </select>
 
-          <!-- Filter Kelas -->
+          <!-- [FIX] Options kelas diisi oleh JS dari Firestore (loadKelas()),
+               tidak ada lagi opsi hardcoded dengan value="" yang menyebabkan
+               validasi kelas selalu gagal -->
           <select id="filterKelas" class="filter-select">
             <option value="">Semua Kelas</option>
           </select>
 
-          <!-- Filter Program -->
           <select id="filterProgram" class="filter-select">
             <option value="">Semua Program</option>
             <option value="Tahfidz">Tahfidz</option>
             <option value="Reguler">Reguler</option>
           </select>
 
-          <!-- Filter Status -->
           <select id="filterStatus" class="filter-select">
             <option value="">Semua Status</option>
             <option value="aktif">Aktif</option>
@@ -127,7 +111,6 @@
           <button class="btn-reset" id="btnReset">Reset</button>
         </div>
 
-        <!-- Tombol Tambah (hanya admin & tu) -->
         <button class="btn-tambah" id="btnTambah"
                 onclick="openTambah()" style="display:none">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -138,20 +121,16 @@
         </button>
       </div>
 
-      <!-- Total count -->
       <div class="total-count">
         Menampilkan <strong id="totalCount">0 siswa</strong>
       </div>
 
-      <!-- ======================================================
-           TABEL — Desktop
-      ====================================================== -->
       <div class="table-container">
         <table class="data-table">
           <thead>
             <tr>
               <th>NISN</th>
-	      <th>Angkatan</th>
+              <th>Angkatan</th>
               <th>Nama</th>
               <th>Gender</th>
               <th>Kelas</th>
@@ -167,9 +146,6 @@
         </table>
       </div>
 
-      <!-- ======================================================
-           CARD LIST — Mobile
-      ====================================================== -->
       <div class="card-list" id="cardList">
         <div class="empty-state">Memuat data...</div>
       </div>
@@ -191,7 +167,6 @@
         <div class="modal-body">
           <div class="form-grid">
 
-            <!-- ID Siswa (auto-generate, disabled) -->
             <div class="form-field full">
               <label>ID Siswa</label>
               <input type="text" id="formStudentId" class="form-control"
@@ -199,31 +174,27 @@
               <div class="form-hint">ID dibuat otomatis oleh sistem</div>
             </div>
 
-	    <!-- NISN -->
-	    <div class="form-field full">
-	      <label>NISN</label>
-	      <input type="text" id="formNisn" class="form-control"
-		     placeholder="Contoh: 0012345678" maxlength="10"
-		     inputmode="numeric" pattern="\d{10}" / required>
-	      <div class="form-hint">NISN terdiri dari maksimal 10 digit angka</div>
-	    </div>	
-	    
-	    <!-- Tahun Ajaran -->
-	    <div class="form-field full">
-	      <label>Tahun Ajaran <span style="color:red">*</span></label>
-	      <input type="text" id="formTahunAjaran" class="form-control" 
-	             placeholder="Contoh: 2025-2026" maxlength="9" required />
-	      <div class="form-hint">Format: YYYY-YYYY (Maksimal 9 karakter)</div>
-	    </div>
-            
-	    <!-- Nama -->
+            <div class="form-field full">
+              <label>NISN</label>
+              <input type="text" id="formNisn" class="form-control"
+                     placeholder="Contoh: 0012345678" maxlength="10"
+                     inputmode="numeric" pattern="\d{10}" required />
+              <div class="form-hint">NISN terdiri dari maksimal 10 digit angka</div>
+            </div>
+
+            <div class="form-field full">
+              <label>Tahun Ajaran <span style="color:red">*</span></label>
+              <input type="text" id="formTahunAjaran" class="form-control"
+                     placeholder="Contoh: 2025-2026" maxlength="9" required />
+              <div class="form-hint">Format: YYYY-YYYY (Maksimal 9 karakter)</div>
+            </div>
+
             <div class="form-field full">
               <label>Nama Lengkap *</label>
               <input type="text" id="formNama" class="form-control"
                      placeholder="Contoh: Ahmad Fauzi" required />
             </div>
 
-            <!-- Gender -->
             <div class="form-field">
               <label>Jenis Kelamin *</label>
               <select id="formGender" class="form-control" required>
@@ -233,7 +204,6 @@
               </select>
             </div>
 
-            <!-- Jenjang -->
             <div class="form-field">
               <label>Jenjang *</label>
               <select id="formJenjang" class="form-control" required>
@@ -243,45 +213,42 @@
               </select>
             </div>
 
-            <!-- Kelas -->
+            <!-- [FIX] Options kelas diisi oleh siswa.js (loadKelas()).
+                 Tidak ada opsi hardcoded dengan value="" yang menyebabkan
+                 validasi selalu gagal meski kelas sudah dipilih -->
             <div class="form-field full">
               <label>Kelas *</label>
               <select id="formKelas" class="form-control" required>
                 <option value="">-- Pilih Kelas --</option>
-		<option value="">7A</option>
-		<option value="">10A</option>
               </select>
             </div>
 
-            <!-- Program -->
             <div class="form-field">
               <label>Program</label>
+              <!-- [FIX] Hapus karakter 'i' stray setelah option terakhir -->
               <select id="formProgram" class="form-control">
                 <option value="">-- Pilih --</option>
                 <option value="Tahfidz">Tahfidz</option>
-                <option value="Reguler">Reguler</option>i
+                <option value="Reguler">Reguler</option>
               </select>
             </div>
 
-            <!-- Kamar Asrama -->
-	    <div class="form-field">
-	      <label>Kamar / Asrama</label>
-	      <select id="formKamar" class="form-control">
+            <div class="form-field">
+              <label>Kamar / Asrama</label>
+              <select id="formKamar" class="form-control">
                 <option value="">-- Pilih --</option>
                 <option value="Abu Bakar">Abu Bakar</option>
                 <option value="Umar">Umar</option>
-		<option value="Khadijah">Khadijah</option>
+                <option value="Khadijah">Khadijah</option>
               </select>
-            </div>    
+            </div>
 
-            <!-- Saldo Jajan -->
             <div class="form-field">
               <label>Saldo Jajan Awal (Rp)</label>
               <input type="number" id="formSaldo" class="form-control"
                      placeholder="0" min="0" value="0" />
             </div>
 
-            <!-- PIN Section (hanya saat tambah baru) -->
             <div class="form-field full" id="pinSection">
               <div class="pin-section">
                 <div class="pin-section-title">🔐 Set PIN Kantin</div>
@@ -325,7 +292,8 @@
       <form id="pinForm">
         <div class="modal-body">
           <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px">
-            Set PIN untuk: <strong id="pinStudentName" style="color:var(--green-deep)"></strong>
+            Set PIN untuk:
+            <strong id="pinStudentName" style="color:var(--green-deep)"></strong>
           </p>
           <input type="hidden" id="pinStudentId" />
 
@@ -356,17 +324,12 @@
     </div>
   </div>
 
-  <!-- Toast Notification -->
   <div class="toast" id="toast"></div>
 
-  <!-- ============================================================
-       JS
-  ============================================================ -->
   <script type="module">
     import { logout }     from './assets/js/dashboard.js';
     import { getSession } from './assets/js/auth-guard.js';
 
-    // Sidebar nav — reuse dari dashboard.js
     const NAV_MENUS = {
       admin : [
         { label: 'MENU UTAMA' },
@@ -431,7 +394,6 @@
     document.getElementById('topbarAvatar').textContent  = initial;
     if (role) renderNav(role);
 
-    // Hamburger
     const sidebar   = document.getElementById('sidebar');
     const overlay   = document.getElementById('sidebarOverlay');
     const hamburger = document.getElementById('btnHamburger');
@@ -448,11 +410,9 @@
       document.body.style.overflow = '';
     });
 
-    // Logout
     document.getElementById('btnLogout').addEventListener('click', logout);
   </script>
 
-  <!-- Load siswa.js (module) -->
   <script type="module" src="assets/js/siswa.js"></script>
 
 </body>
