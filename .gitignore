@@ -10,7 +10,7 @@ firebase-debug.*.log*
 # .gitignore
 serviceAccountKey.json
 node_modules/
-
+patches/
 # Firebase cache
 .firebase/
 
