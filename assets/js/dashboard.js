@@ -108,8 +108,8 @@ async function renderAdmin() {
     const txSnap = await getDocs(
       query(
         collection(db, 'pos_transactions'),
-        where('timestamp', '>=', startOfDay),
-        orderBy('timestamp', 'desc')
+        orderBy('timestamp', 'desc'),
+        where('timestamp', '>=', startOfDay)
       )
     );
     let totalTxHariIni = 0;
@@ -288,8 +288,8 @@ function renderKantin() {
 
     const q = query(
       collection(db, 'pos_transactions'),
-      where('timestamp', '>=', startOfDay),
-      orderBy('timestamp', 'desc')
+      orderBy('timestamp', 'desc'),
+      where('timestamp', '>=', startOfDay)
     );
 
     onSnapshot(q, async (snap) => {
