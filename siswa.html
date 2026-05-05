@@ -330,69 +330,17 @@
     import { logout }     from './assets/js/dashboard.js';
     import { getSession } from './assets/js/auth-guard.js';
 
-    const NAV_MENUS = {
-      admin : [
-        { label: 'MENU UTAMA' },
-        { icon: 'home',    text: 'Dashboard',     href: 'dashboard.html' },
-        { icon: 'users',   text: 'Data Siswa',    href: 'siswa.html', active: true },
-        { icon: 'grid',    text: 'Absensi Piket', href: 'piket.html' },
-        { label: 'AKADEMIK' },
-        { icon: 'file',    text: 'Nilai',         href: 'nilai.html' },
-        { label: 'KEUANGAN' },
-        { icon: 'card',    text: 'Billing',       href: 'billing.html' },
-        { icon: 'dollar',  text: 'Slip Gaji',     href: 'gaji.html' },
-        { icon: 'cart',    text: 'Kantin',        href: 'pos.html' },
-        { label: 'ADMINISTRASI' },
-        { icon: 'mail',    text: 'Surat',         href: 'surat.html' },
-        { icon: 'settings',text: 'Pengguna',      href: 'pengguna.html' },
-      ],
-      kepsek: [
-        { label: 'MENU UTAMA' },
-        { icon: 'home',  text: 'Dashboard',   href: 'dashboard.html' },
-        { icon: 'users', text: 'Data Siswa',  href: 'siswa.html', active: true },
-        { icon: 'grid',  text: 'Absensi Piket', href: 'piket.html' },
-        { label: 'AKADEMIK' },
-        { icon: 'file',  text: 'Nilai',       href: 'nilai.html' },
-        { label: 'KEUANGAN' },
-        { icon: 'card',  text: 'Billing',     href: 'billing.html' },
-        { icon: 'dollar',text: 'Slip Gaji',   href: 'gaji.html' },
-      ],
-      guru: [
-        { label: 'MENU UTAMA' },
-        { icon: 'home',  text: 'Dashboard',   href: 'dashboard.html' },
-        { icon: 'users', text: 'Data Siswa',  href: 'siswa.html', active: true },
-        { icon: 'grid',  text: 'Absensi Piket', href: 'piket.html' },
-        { label: 'AKADEMIK' },
-        { icon: 'file',  text: 'Input Nilai', href: 'nilai.html' },
-        { label: 'KEUANGAN' },
-        { icon: 'dollar',text: 'Slip Gaji',   href: 'gaji.html' },
-      ],
-      tu: [
-        { label: 'MENU UTAMA' },
-        { icon: 'home',  text: 'Dashboard',    href: 'dashboard.html' },
-        { icon: 'users', text: 'Data Siswa',   href: 'siswa.html', active: true },
-        { icon: 'grid',  text: 'Absensi Piket',href: 'piket.html' },
-        { label: 'KEUANGAN' },
-        { icon: 'card',  text: 'Billing',      href: 'billing.html' },
-        { label: 'ADMINISTRASI' },
-        { icon: 'mail',  text: 'Surat',        href: 'surat.html' },
-      ],
-    };
+   import { renderNav, setupUserInfo } from './assets/js/navbar.js';
 
-    function renderNav(role) {
-      const menus = NAV_MENUS[role] || [];
-      document.getElementById('sidebarNav').innerHTML = menus.map(item => {
-        if (!item.icon) return `<div class="nav-label">${item.label}</div>`;
-        return `<a href="${item.href}" class="nav-item ${item.active ? 'active' : ''}">${item.text}</a>`;
-      }).join('');
+    // Dapatkan halaman saat ini secara otomatis dari URL
+    const currentPage = window.location.pathname.split('/').pop() || 'siswa.html';
+
+    // Inisialisasi user info dan navbar
+    const user = getSession();
+    setupUserInfo(user);
+    if (user.role) {
+      renderNav(user.role, 'sidebarNav', currentPage);
     }
-
-    const { name, role } = getSession();
-    const initial = name ? name.charAt(0).toUpperCase() : '?';
-
-    document.getElementById('sidebarAvatar').textContent = initial;
-    document.getElementById('topbarAvatar').textContent  = initial;
-    if (role) renderNav(role);
 
     const sidebar   = document.getElementById('sidebar');
     const overlay   = document.getElementById('sidebarOverlay');
