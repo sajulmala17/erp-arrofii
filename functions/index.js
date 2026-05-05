@@ -188,7 +188,35 @@ app.post('/calculatePayroll', async (req, res) => {
 // POST /api/posTransaction
 // [FIX-B] Cari dokumen student berdasarkan field student_id,
 //         bukan berdasarkan doc ID
+// [SECURITY-1] Tambah rate limiting: maksimal 5 transaksi per menit per kasir
+// [SECURITY-2] Validasi nominal maksimal per transaksi: 500.000
 // ===========================================================
+
+// Store untuk rate limiting (in-memory, untuk production gunakan Redis/Firestore)
+const transactionRateLimit = new Map();
+
+function checkRateLimit(kasir_uid) {
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 menit
+  const maxRequests = 5; // Maksimal 5 transaksi per menit
+
+  if (!transactionRateLimit.has(kasir_uid)) {
+    transactionRateLimit.set(kasir_uid, []);
+  }
+
+  const timestamps = transactionRateLimit.get(kasir_uid);
+  // Hapus timestamp yang sudah keluar dari window
+  const validTimestamps = timestamps.filter(ts => now - ts < windowMs);
+
+  if (validTimestamps.length >= maxRequests) {
+    return false; // Rate limit exceeded
+  }
+
+  validTimestamps.push(now);
+  transactionRateLimit.set(kasir_uid, validTimestamps);
+  return true;
+}
+
 app.post('/posTransaction', async (req, res) => {
   try {
     const callerRole = req.user.role;
@@ -203,12 +231,28 @@ app.post('/posTransaction', async (req, res) => {
       return res.status(400).json({ error: 'student_id, pin, nominal, dan kasir_uid wajib diisi.' });
     }
 
+     // [SECURITY-2] Validasi nominal: harus positif dan tidak melebihi batas maksimal
+    const MAX_NOMINAL_PER_TX = 500000; // Maksimal 500.000 per transaksi
     if (typeof nominal !== 'number' || nominal <= 0) {
       return res.status(400).json({ error: 'Nominal harus angka positif.' });
+    }
+    if (nominal > MAX_NOMINAL_PER_TX) {
+      return res.status(400).json({
+        error: `Nominal terlalu besar. Maksimal ${MAX_NOMINAL_PER_TX.toLocaleString('id-ID')} per transaksi.`
+      });
     }
 
     if (kasir_uid !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden: kasir_uid tidak sesuai token.' });
+    }
+
+    // [SECURITY-1] Cek rate limiting
+    if (!checkRateLimit(kasir_uid)) {
+      console.warn(`[posTransaction] Rate limit exceeded for kasir: ${kasir_uid}`);
+      return res.status(429).json({
+        error: 'Terlalu banyak transaksi. Silakan tunggu beberapa saat.',
+        retry_after: 60 // detik
+      });
     }
 
     // [FIX-B] Cari dokumen berdasarkan field student_id
@@ -233,9 +277,9 @@ app.post('/posTransaction', async (req, res) => {
       const freshStudentDoc = await transaction.get(studentRef);
       const saldoSaat       = freshStudentDoc.data().saldo_jajan || 0;
 
-      if (saldoSaat < nominal) {
-        throw new Error(`INSUFFICIENT_BALANCE:${saldoSaat}`);
-      }
+      // Catatan: Saldo BOLEH negatif untuk toleransi siswa agar bisa tetap makan,
+      //          nanti akan dikurangi saat isi saldo kembali.
+      // Tidak ada validasi saldo minimum, hanya validasi nominal transaksi.
 
       const saldoBaru = saldoSaat - nominal;
 
@@ -265,13 +309,8 @@ app.post('/posTransaction', async (req, res) => {
     });
 
   } catch (err) {
-    if (err.message && err.message.startsWith('INSUFFICIENT_BALANCE')) {
-      const saldo = err.message.split(':')[1];
-      return res.status(400).json({
-        error : 'Saldo tidak cukup.',
-        saldo_tersedia: Number(saldo),
-      });
-    }
+    // Catatan: Tidak ada error INSUFFICIENT_BALANCE atau NEGATIVE_BALANCE lagi
+    // karena saldo sekarang BOLEH negatif untuk toleransi siswa.
     console.error('[posTransaction] Error:', err);
     return res.status(500).json({ error: 'Internal server error.', detail: err.message });
   }
