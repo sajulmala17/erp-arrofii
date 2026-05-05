@@ -546,7 +546,7 @@ exports.onStudentCreated = functions.firestore
       const billRef = db.collection('billing').doc();
       batch.set(billRef, {
         bill_id      : billRef.id,
-        student_id   : studentId,
+        student_id   : studentData.student_id,
         jenis_tagihan: item.jenis_tagihan,
         nominal      : item.nominal,
         due_date     : admin.firestore.Timestamp.fromDate(dueDate),
