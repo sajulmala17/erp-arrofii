@@ -46,6 +46,25 @@ async function apiFetch(endpoint, method = 'POST', body = null) {
     },
     body: body ? JSON.stringify(body) : null,
   });
+  
+  if (!res.ok) {
+    let errorMsg = `Error ${res.status}: ${res.statusText}`;
+    try {
+      const errData = await res.json();
+      if (errData && errData.message) {
+        errorMsg = errData.message;
+      }
+    } catch (e) {
+      // Response bukan JSON, gunakan status text
+      if (res.status === 401) {
+        errorMsg = 'Sesi Anda telah berakhir. Silakan login ulang.';
+      } else if (res.status === 500) {
+        errorMsg = 'Terjadi kesalahan pada server. Silakan coba lagi.';
+      }
+    }
+    throw new Error(errorMsg);
+  }
+
   return await res.json();
 }
 
