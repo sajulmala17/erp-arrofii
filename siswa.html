@@ -327,20 +327,12 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { logout }     from './assets/js/dashboard.js';
-    import { getSession } from './assets/js/auth-guard.js';
+    import { logout }       from './assets/js/dashboard.js';
+    import { initComplete } from './assets/js/navbar.js';
 
-   import { renderNav, setupUserInfo } from './assets/js/navbar.js';
-
-    // Dapatkan halaman saat ini secara otomatis dari URL
+    // Inisialisasi navbar dan user info secara otomatis
     const currentPage = window.location.pathname.split('/').pop() || 'siswa.html';
-
-    // Inisialisasi user info dan navbar
-    const user = getSession();
-    setupUserInfo(user);
-    if (user.role) {
-      renderNav(user.role, 'sidebarNav', currentPage);
-    }
+    initComplete('sidebarNav', currentPage);
 
     const sidebar   = document.getElementById('sidebar');
     const overlay   = document.getElementById('sidebarOverlay');
