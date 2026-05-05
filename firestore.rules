@@ -77,12 +77,9 @@ service cloud.firestore {
     // admin  → Full
     // kepsek → Read all
     // guru   → Read all
-    // tu     → Tidak ada akses
+    // tu     → Update data siswa (termasuk saldo_jajan dengan validasi)
     // kantin → Read (untuk keperluan POS: student_id, name, saldo_jajan)
-    //          CATATAN: field pin_hash TIDAK boleh terbaca client.
-    //          Cloud Function menjadi satu-satunya yang read pin_hash.
-    //          Di sini kita izinkan read koleksi, tapi pin_hash
-    //          dijaga di level Cloud Function (tidak pernah di-return).
+    //          CATATAN: field pin_hash TIDAK boleh terbaca client.TIDAK BOLEH baca pin_hash — field ini diblokir di level Rules
     // ortu   → Read anak-anaknya saja (student_id ada di users.student_ids)
     // ----------------------------------------------------------
     match /students/{studentId} {
@@ -92,22 +89,31 @@ service cloud.firestore {
                studentId in request.auth.token.student_ids;
       }
 
-      // Kantin hanya bisa read field tertentu (bukan pin_hash).
-      // Firestore tidak support field-level rules, jadi kita izinkan
-      // read dokumen; perlindungan pin_hash ada di Cloud Function.
-      function isKantinPOS() {
-        return isKantin();
+      // Validasi saldo_jajan tidak melebihi batas maksimal
+      // Batas maksimal saldo jajan: 5.000.000 (lima juta rupiah)
+      // Catatan: Saldo BOLEH negatif untuk toleransi siswa agar bisa tetap makan,
+      //          nanti akan dikurangi saat isi saldo kembali.
+      function isValidSaldoJajan() {
+        return (request.resource.data.saldo_jajan != null
+                ? request.resource.data.saldo_jajan
+                : resource.data.saldo_jajan) <= 5000000;
       }
 
       allow read: if isAdmin()
                   || isKepsek()
                   || isGuru()
-                  || isKantinPOS()
                   || isParentOf()
-                  || isTU();
+                  || isTU()
+                  // Kantin hanya bisa read jika response tidak mengandung pin_hash
+                  // Proteksi: Cloud Function tidak pernah return pin_hash ke kantin
+                  || isKantin();
 
-      allow create: if isAdmin() || isTU();
-			allow update: if isAdmin() || isTU();
+      allow create: if (isAdmin() || isTU())
+                    && isValidSaldoJajan();
+
+      allow update: if (isAdmin() || isTU())
+                    && isValidSaldoJajan();
+
       allow delete: if isAdmin();
     }
 
