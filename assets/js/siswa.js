@@ -168,8 +168,8 @@ function renderTable(data) {
 
   const rows = data.map(s => {
     const statusBadge = s.aktif === false
-      ? '<span class="badge badge-nonaktif" title="Siswa Nonaktif"><svg viewBox="0 0 24 24" width="2em"  fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg></span>'
-      : '<span class="badge badge-aktif" title="Siswa Aktif"><svg viewBox="0 0 24 24" width="2em" height="2em" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg></span>';
+      ? '<span class="badge badge-nonaktif" title="Siswa Nonaktif"><svg viewBox="0 0 24 24" width="1.5em"  fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg></span>'
+      : '<span class="badge badge-aktif" title="Siswa Aktif"><svg viewBox="0 0 24 24" width="1.5em" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg></span>';
 
     // [FIX-3] Gunakan s.id untuk operasi Firestore, s.student_id untuk Cloud Function
     const aksiHtml = canEdit ? `
@@ -215,9 +215,8 @@ function renderTable(data) {
   const cards = data.map(s => {
     const kelasNama = kelasMap[s.class_id] || s.class_id || '—';
     const statusBadge = s.aktif === false
-      ? '<span class="badge badge-nonaktif"><svg viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="1em"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg></span>'
-      : '<span class="badge badge-aktif"><svg viewBox="0 0 24 24" fill="none" stroke="#28a745" fill="none" stroke="currentColor" stroke-width="2em" style="color: green"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></span>';
-
+      ? '<span class="badge badge-nonaktif"><svg viewBox="0 0 24 24" width="1.5em"  fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg></span>'
+      : '<span class="badge badge-aktif"><svg viewBox="0 0 24 24" width="1.5em" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg></span>';
     return `
       <div class="siswa-card ${s.aktif === false ? 'card-nonaktif' : ''}">
         <div class="siswa-card-head">
