@@ -521,8 +521,14 @@ document.querySelectorAll('.modal').forEach(modal => {
 function setBtnLoading(id, isLoading) {
   const btn = document.getElementById(id);
   if (!btn) return;
-  btn.disabled    = isLoading;
-  btn.textContent = isLoading ? 'Menyimpan...' : (btn.dataset.label || btn.textContent);
+  if (isLoading) {
+    btn.dataset.label = btn.textContent; // simpan teks asli dulu
+    btn.textContent   = 'Menyimpan...';
+    btn.disabled      = true;
+  } else {
+    btn.textContent = btn.dataset.label || 'Simpan';
+    btn.disabled    = false;
+  }
 }
 
 function showToast(msg, type = 'success') {
