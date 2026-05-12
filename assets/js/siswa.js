@@ -168,30 +168,42 @@ function renderTable(data) {
 
   const rows = data.map(s => {
     const statusBadge = s.aktif === false
-      ? '<span class="badge badge-nonaktif" title="Siswa Nonaktif"><i class="fas fa-user-times" style="color:red"></i></span>'
-      : '<span class="badge badge-aktif" title="Siswa Aktif"><i class="fas fa-user-check" style="color:green"></i></span>';
+      ? '<span class="badge badge-nonaktif" title="Siswa Nonaktif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: red"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg></span>'
+      : '<span class="badge badge-aktif" title="Siswa Aktif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: green"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></span>';
 
     // [FIX-3] Gunakan s.id untuk operasi Firestore, s.student_id untuk Cloud Function
     const aksiHtml = canEdit ? `
       <div class="aksi-wrap">
         <button class="btn-aksi edit"   title="Edit siswa"
                 onclick="openEdit('${s.id}')">
-          <i class="fas fa-user-edit"></i>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
         </button>
         <button class="btn-aksi pin"   title="Edit PIN"
                 onclick="openPin('${s.student_id}', '${s.name}')">
-          <i class="far fa-credit-card"></i>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+          <line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
         </button>
         ${s.aktif !== false
           ? `<button class="btn-aksi nonaktif"
                      onclick="toggleAktif('${s.id}', false)"
                      title="Nonaktifkan">
-               <i class="fas fa-toggle-off"></i>
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="5" width="22" height="14" rx="7" ry="7"/>
+                <circle cx="8" cy="12" r="3"/>
+              </svg>
              </button>`
           : `<button class="btn-aksi aktif"
                      onclick="toggleAktif('${s.id}', true)"
                      title="Aktifkan">
-               <i class="fas fa-toggle-on"></i>
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="5" width="22" height="14" rx="7" ry="7"/>
+            <circle cx="16" cy="12" r="3"/>
+          </svg>
              </button>`
         }
       </div>` : '—';
@@ -215,8 +227,8 @@ function renderTable(data) {
   const cards = data.map(s => {
     const kelasNama = kelasMap[s.class_id] || s.class_id || '—';
     const statusBadge = s.aktif === false
-      ? '<span class="badge badge-nonaktif"><i class="fas fa-user-times" style="color:red"></i></span>'
-      : '<span class="badge badge-aktif"><i class="fas fa-user-check" style="color:green"></i></span>';
+      ? '<span class="badge badge-nonaktif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: red"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg></span>'
+      : '<span class="badge badge-aktif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: green"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></span>';
 
     return `
       <div class="siswa-card ${s.aktif === false ? 'card-nonaktif' : ''}">
@@ -250,17 +262,29 @@ function renderTable(data) {
         ${canEdit ? `
         <div class="siswa-card-foot">
           <button class="btn-aksi edit"
-                  onclick="openEdit('${s.id}')">✎</button>
+                  onclick="openEdit('${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+</svg></button>
           <button class="btn-aksi pin"
-                  onclick="openPin('${s.student_id}', '${s.name}')">💳</button>
+                  onclick="openPin('${s.student_id}', '${s.name}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+  <line x1="1" y1="10" x2="23" y2="10"/>
+</svg></button>
           ${s.aktif !== false
             ? `<button class="btn-aksi nonaktif"
                        onclick="toggleAktif('${s.id}', false)">
-                 Nonaktifkan
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="1" y="5" width="22" height="14" rx="7" ry="7"/>
+                  <circle cx="8" cy="12" r="3"/>
+                </svg>
                </button>`
             : `<button class="btn-aksi aktif"
                        onclick="toggleAktif('${s.id}', true)">
-                 Aktifkan
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="1" y="5" width="22" height="14" rx="7" ry="7"/>
+                  <circle cx="16" cy="12" r="3"/>
+                </svg>
                </button>`
           }
         </div>` : ''}
