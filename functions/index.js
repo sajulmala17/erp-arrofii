@@ -125,15 +125,16 @@ app.post('/calculatePayroll', async (req, res) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate   = new Date(year, month, 1);
 
-    const attendanceSnap = await db.collection('picket_attendance')
+    const attendanceSnap = await db.collection('subject_attendance')
       .where('teacher_uid', '==', teacher_uid)
+      .where('status_guru', '==', 'hadir')
       .where('tanggal', '>=', admin.firestore.Timestamp.fromDate(startDate))
       .where('tanggal', '<',  admin.firestore.Timestamp.fromDate(endDate))
       .get();
 
     let totalJam = 0;
     attendanceSnap.forEach(doc => {
-      totalJam += doc.data().total_jam || 0;
+      totalJam += doc.data().jumlah_jam || 0;
     });
 
     const gajiPokok = totalJam * hourlyRate;
