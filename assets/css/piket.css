@@ -1,0 +1,549 @@
+/* ============================================================
+   piket.css
+   Absensi Piket Harian — mobile-first
+   ============================================================ */
+
+/* ============================================================
+   FORM PILIH TANGGAL & JENJANG
+============================================================ */
+.piket-form {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0,0,0,0.04);
+  margin-bottom: 16px;
+}
+
+.piket-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.piket-form-field label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--green-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.piket-input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1.5px solid #d8d0be;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: var(--font-main);
+  background: var(--cream);
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.piket-input:focus {
+  border-color: var(--green-bright);
+  box-shadow: 0 0 0 3px rgba(64,145,108,0.12);
+}
+
+/* ============================================================
+   INFO HEADER ABSENSI
+============================================================ */
+.absensi-header {
+  background: linear-gradient(135deg, var(--green-deep), var(--green-mid));
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  color: white;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.absensi-header::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+
+.absensi-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+
+.absensi-tanggal {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.absensi-meta {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+/* Status badge */
+.badge-saved  { background: rgba(255,255,255,0.2); color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-draft  { background: rgba(255,165,0,0.3);   color: #ffe082; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-final  { background: rgba(255,255,255,0.15); color: #a5d6a7; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: 4px; }
+
+/* Progress bar */
+.progress-wrap {
+  margin-bottom: 14px;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 6px;
+}
+
+.progress-track {
+  height: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #74c69d, #40916c);
+  border-radius: 10px;
+  transition: width 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+  font-size: 10px;
+  color: white;
+  font-weight: 700;
+  min-width: 32px;
+}
+
+/* Summary stats */
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.summary-stat {
+  background: rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.summary-stat-val {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.summary-stat-label {
+  font-size: 10px;
+  opacity: 0.75;
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.summary-stat.hadir  .summary-stat-val { color: #a5d6a7; }
+.summary-stat.sakit  .summary-stat-val { color: #ffe082; }
+.summary-stat.izin   .summary-stat-val { color: #90caf9; }
+.summary-stat.alpha  .summary-stat-val { color: #ef9a9a; }
+
+/* ============================================================
+   TOOLBAR SEARCH + BULK ACTION
+============================================================ */
+.absensi-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.search-absen {
+  flex: 1;
+  min-width: 160px;
+  height: 40px;
+  padding: 0 12px 0 36px;
+  border: 1.5px solid #d8d0be;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-family: var(--font-main);
+  background: var(--white);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-absen:focus { border-color: var(--green-bright); }
+
+.btn-all-hadir {
+  height: 40px;
+  padding: 0 14px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1.5px solid #a5d6a7;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-main);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.btn-all-hadir:hover {
+  background: #c8e6c9;
+}
+
+/* ============================================================
+   KELAS GROUP
+============================================================ */
+.kelas-group {
+  margin-bottom: 12px;
+}
+
+.kelas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #f0ead8;
+  border-radius: 10px 10px 0 0;
+  border: 1px solid #e8dfc8;
+  border-bottom: none;
+}
+
+.kelas-nama {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green-deep);
+}
+
+.kelas-count {
+  font-size: 12px;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.kelas-siswa {
+  border: 1px solid #e8dfc8;
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+  background: var(--white);
+}
+
+/* ============================================================
+   SISWA ITEM
+============================================================ */
+.siswa-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f5f0e8;
+  cursor: pointer;
+  transition: background 0.15s;
+  background: var(--white);
+  position: relative;
+}
+
+.siswa-item:last-child { border-bottom: none; }
+
+.siswa-item:not(.readonly):hover {
+  background: var(--status-bg, #f0f7f4);
+}
+
+.siswa-item.readonly { cursor: default; }
+
+/* Left accent bar berdasarkan status */
+.siswa-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--status-color, var(--green-bright));
+  border-radius: 0 2px 2px 0;
+}
+
+.siswa-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: var(--status-bg, #e8f5e9);
+  color: var(--status-color, var(--green-mid));
+  transition: background 0.2s, color 0.2s;
+}
+
+.siswa-avatar.male   { }
+.siswa-avatar.female { }
+
+.siswa-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.siswa-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.siswa-item-nisn {
+  font-size: 11.5px;
+  color: var(--text-soft);
+  margin-top: 1px;
+}
+
+/* Status buttons */
+.status-buttons {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.status-btn {
+  width: 32px; height: 32px;
+  border: 1.5px solid #e0d8c8;
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: var(--font-main);
+  color: var(--text-soft);
+}
+
+.status-btn:hover:not(:disabled) {
+  border-color: var(--green-bright);
+  transform: scale(1.1);
+}
+
+.status-btn.active {
+  background: var(--status-bg);
+  border-color: var(--status-color);
+  color: var(--status-color);
+  font-weight: 700;
+}
+
+.status-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   EMPTY STATE
+============================================================ */
+.empty-absen {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-soft);
+}
+
+.empty-absen-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+/* ============================================================
+   ACTION BUTTONS BAWAH
+============================================================ */
+.absensi-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--cream);
+  border-top: 1px solid #e8dfc8;
+  padding: 12px 16px;
+  display: flex;
+  gap: 10px;
+  z-index: 50;
+  margin: 0 -28px -28px; /* Extend ke tepi main-content */
+}
+
+.btn-simpan {
+  flex: 1;
+  height: 48px;
+  background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 4px 12px rgba(26,58,42,0.25);
+}
+
+.btn-simpan:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(26,58,42,0.30);
+}
+
+.btn-simpan:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-finalisasi {
+  height: 48px;
+  padding: 0 20px;
+  background: var(--white);
+  color: var(--green-deep);
+  border: 1.5px solid var(--green-bright);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-finalisasi:hover:not(:disabled) {
+  background: #e8f5e9;
+}
+
+.btn-finalisasi:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   LOADING OVERLAY
+============================================================ */
+.loading-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(250,247,240,0.85);
+  border-radius: var(--radius-lg);
+  z-index: 10;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loading-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid rgba(45,106,79,0.2);
+  border-top-color: var(--green-mid);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   TOAST
+============================================================ */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--green-deep);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.toast.show    { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error   { background: var(--error); }
+.toast.success { background: var(--green-mid); }
+
+/* ============================================================
+   EMPTY STATE (halaman belum pilih jenjang)
+============================================================ */
+.empty-state-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-soft);
+}
+
+.empty-state-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-state-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-mid);
+  margin-bottom: 6px;
+}
+
+.empty-state-sub {
+  font-size: 13px;
+}
+
+/* ============================================================
+   PANEL WRAPPER (relative untuk loading overlay)
+============================================================ */
+.absensi-panel-wrap {
+  position: relative;
+}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 767px) {
+  .piket-form        { padding: 14px 16px; gap: 10px; }
+  .absensi-header    { padding: 14px 16px; }
+  .summary-stats     { gap: 6px; }
+  .summary-stat-val  { font-size: 18px; }
+  .status-btn        { width: 28px; height: 28px; font-size: 12px; }
+  .siswa-item        { padding: 10px 12px; gap: 10px; }
+  .absensi-actions   { margin: 0 -16px -16px; padding: 10px 16px; }
+}
+
+@media (min-width: 768px) {
+  .summary-stats { grid-template-columns: repeat(4, 1fr); }
+}
