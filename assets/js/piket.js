@@ -57,6 +57,37 @@ function toDateInput(date) {
 }
 
 // ============================================================
+// LOAD: Isi dropdown kelas berdasarkan jenjang
+// ============================================================
+async function loadKelasByJenjang(jenjang) {
+  const selKelas = document.getElementById('inputKelas');
+  selKelas.innerHTML = '<option value="">Semua Kelas</option>';
+  // Disable jika belum pilih jenjang
+  selKelas.disabled = !jenjang;
+  if (!jenjang) return;
+
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, 'classes'),
+        where('jenjang', '==', jenjang),
+        orderBy('name')
+      )
+    );
+
+    snap.docs.forEach(d => {
+      const opt   = document.createElement('option');
+      opt.value   = d.id;
+      opt.textContent = d.data().name;
+      selKelas.appendChild(opt);
+    });
+
+  } catch (err) {
+    console.error('[loadKelasByJenjang] Error:', err);
+  }
+}
+
+// ============================================================
 // HELPER: Format tanggal ke string Indonesia
 // ============================================================
 function formatTanggalID(dateStr) {
@@ -79,35 +110,28 @@ function generateDocId(uid, tanggal, jenjang) {
 }
 
 // ============================================================
-// LOAD: Ambil data siswa berdasarkan jenjang
+// LOAD: Ambil data siswa berdasarkan jenjang terus kelas
 // ============================================================
-async function loadSiswa(jenjang) {
+async function loadSiswa(jenjang, kelasId = '') {
+
   try {
-    const snap = await getDocs(
-      query(
-        collection(db, 'students'),
-        where('jenjang', '==', jenjang),
-        where('aktif', '!=', false),
-        orderBy('aktif'),
-        orderBy('name')
-      )
+    // Bangun query berdasarkan filter
+    const constraints = [
+      where('jenjang', '==', jenjang),
+      orderBy('name'),
+    ];
+
+    if (kelasId) {
+      constraints.unshift(where('class_id', '==', kelasId));
+    }
+
+    const snapAll = await getDocs(
+      query(collection(db, 'students'), ...constraints)
     );
 
-    // Fallback jika index belum ada
-    if (snap.empty) {
-      const snapAll = await getDocs(
-        query(
-          collection(db, 'students'),
-          where('jenjang', '==', jenjang),
-          orderBy('name')
-        )
-      );
-      allSiswa = snapAll.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(s => s.aktif !== false);
-    } else {
-      allSiswa = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }
+    allSiswa = snapAll.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(s => s.aktif !== false);
 
     // Load nama kelas
     const classIds = [...new Set(allSiswa.map(s => s.class_id).filter(Boolean))];
@@ -318,6 +342,7 @@ window.setAllHadir = function() {
 async function loadAbsensi() {
   const tanggal = document.getElementById('inputTanggal').value;
   const jenjang = document.getElementById('inputJenjang').value;
+  const kelasId = document.getElementById('inputKelas').value;
 
   if (!tanggal || !jenjang) return;
 
@@ -329,7 +354,7 @@ async function loadAbsensi() {
 
   try {
     // Load siswa & cek absensi existing paralel
-    await loadSiswa(jenjang);
+    await loadSiswa(jenjang, kelasId);
     const existing = await loadExistingAbsensi(currentUid, tanggal, jenjang);
 
     // Jika belum ada absensi, default semua hadir
@@ -444,7 +469,17 @@ window.saveAbsensi = async function(finalize = false) {
 // EVENT LISTENERS
 // ============================================================
 document.getElementById('inputTanggal').addEventListener('change', loadAbsensi);
-document.getElementById('inputJenjang').addEventListener('change', loadAbsensi);
+
+document.getElementById('inputJenjang').addEventListener('change', async () => {
+  const jenjang = document.getElementById('inputJenjang').value;
+  await loadKelasByJenjang(jenjang);
+  // Reset panel jika jenjang berubah
+  document.getElementById('absensiPanel').style.display = 'none';
+  document.getElementById('emptyState').style.display   = 'block';
+  await loadAbsensi();
+});
+
+document.getElementById('inputKelas').addEventListener('change', loadAbsensi);
 document.getElementById('searchSiswa')?.addEventListener('input', renderSiswaList);
 
 // ============================================================
