@@ -16,6 +16,7 @@ export const NAV_MENUS = {
     { icon: 'home',    text: 'Dashboard',      href: 'dashboard.html' },
     { icon: 'users',   text: 'Data Siswa',     href: 'siswa.html' },
     { icon: 'grid',    text: 'Absensi Piket',  href: 'piket.html' },
+    { icon: 'book-open', text: 'Absensi Mapel', href: 'absensi-mapel.html' },
     { label: 'AKADEMIK' },
     { icon: 'file-text', text: 'Nilai',        href: 'nilai.html' },
     { label: 'KEUANGAN' },
@@ -31,6 +32,7 @@ export const NAV_MENUS = {
     { icon: 'home',    text: 'Dashboard',      href: 'dashboard.html' },
     { icon: 'users',   text: 'Data Siswa',     href: 'siswa.html' },
     { icon: 'grid',    text: 'Absensi Piket',  href: 'piket.html' },
+    { icon: 'book-open', text: 'Absensi Mapel', href: 'absensi-mapel.html' },
     { label: 'AKADEMIK' },
     { icon: 'file-text', text: 'Nilai',        href: 'nilai.html' },
     { label: 'KEUANGAN' },
@@ -45,6 +47,7 @@ export const NAV_MENUS = {
     { icon: 'home',      text: 'Dashboard',     href: 'dashboard.html' },
     { icon: 'users',     text: 'Data Siswa',    href: 'siswa.html' },
     { icon: 'grid',      text: 'Absensi Piket', href: 'piket.html' },
+    { icon: 'book-open', text: 'Absensi Mapel', href: 'absensi-mapel.html' },
     { label: 'AKADEMIK' },
     { icon: 'file-text', text: 'Input Nilai',   href: 'nilai.html' },
     { label: 'KEUANGAN' },
@@ -55,6 +58,7 @@ export const NAV_MENUS = {
     { icon: 'home',      text: 'Dashboard',     href: 'dashboard.html' },
     { icon: 'users',     text: 'Data Siswa',    href: 'siswa.html' },
     { icon: 'grid',      text: 'Absensi Piket', href: 'piket.html' },
+    { icon: 'book-open', text: 'Absensi Mapel', href: 'absensi-mapel.html' },
     { label: 'KEUANGAN' },
     { icon: 'credit-card', text: 'Billing',     href: 'billing.html' },
     { label: 'ADMINISTRASI' },
@@ -89,6 +93,7 @@ const ICONS = {
   'card': '<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
   'dollar': '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
   'cart': '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
+  'book-open': '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
 };
 
 /**
