@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rekap Absensi — ERP Al-Arrofi</title>
+  <link rel="stylesheet" href="assets/css/global.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/rekap-absensi.css" />
+</head>
+<body>
+
+  <!-- TOPBAR Mobile -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="btn-hamburger" id="btnHamburger" aria-label="Buka menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <span class="topbar-brand">Rekap Absensi</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-avatar" id="topbarAvatar">?</div>
+    </div>
+  </header>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 38 38" fill="none">
+            <path d="M19 3C19 3 10 10 10 20V32H28V20C28 10 19 3 19 3Z"
+                  fill="rgba(255,255,255,0.15)" stroke="white" stroke-width="1.5"/>
+            <path d="M14 32V24C14 21.8 16.2 20 19 20C21.8 20 24 21.8 24 24V32"
+                  stroke="white" stroke-width="1.5"/>
+            <circle cx="19" cy="13" r="2.5" fill="white" opacity="0.9"/>
+            <path d="M6 32H32" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="sidebar-brand-text">
+          <div class="sidebar-brand-arabic">مدرسة الأروفي</div>
+          <div class="sidebar-brand-sub">ERP System</div>
+        </div>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="user-display-name">Memuat...</div>
+          <div class="sidebar-user-role"  id="user-display-role">—</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebarNav"></nav>
+
+      <div class="sidebar-footer">
+        <button class="btn-logout" id="btnLogout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Keluar
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+      <div class="page-header">
+        <div class="page-title">Rekap Absensi</div>
+        <div class="page-subtitle">Laporan kehadiran siswa & jam mengajar guru</div>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="siswa"
+                id="tabSiswa" onclick="switchTab('siswa')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Absensi Siswa
+        </button>
+        <button class="tab-btn" data-tab="guru"
+                id="tabGuru" onclick="switchTab('guru')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Absensi Guru
+        </button>
+      </div>
+
+      <!-- ======================================================
+           PANEL: ABSENSI SISWA
+      ====================================================== -->
+      <div id="panelSiswa">
+
+        <!-- Filter -->
+        <div class="filter-bar">
+          <div class="filter-field">
+            <label>Bulan</label>
+            <input type="month" id="filterBulanSiswa" class="filter-control" />
+          </div>
+          <div class="filter-field">
+            <label>Kelas</label>
+            <select id="filterKelasRekap" class="filter-control">
+              <option value="">Semua Kelas</option>
+            </select>
+          </div>
+          <button class="btn-load-rekap" onclick="loadRekapSiswa()">
+            Tampilkan
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-rekap" id="loadingSiswa">
+          <div class="loading-spinner-sm"></div>
+          Memuat data absensi siswa...
+        </div>
+
+        <!-- Summary -->
+        <div id="summaryRekapSiswa"></div>
+
+        <!-- Tabel -->
+        <div class="content-card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   style="width:18px;height:18px;color:var(--green-bright)">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+              </svg>
+              Rekap Kehadiran Siswa
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div id="tableSiswa">
+              <div class="empty-rekap">
+                Pilih bulan lalu klik <strong>Tampilkan</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ======================================================
+           PANEL: ABSENSI GURU
+      ====================================================== -->
+      <div id="panelGuru" style="display:none">
+
+        <!-- Filter -->
+        <div class="filter-bar">
+          <div class="filter-field">
+            <label>Bulan</label>
+            <input type="month" id="filterBulanGuru" class="filter-control" />
+          </div>
+          <div class="filter-field" id="filterGuruWrap">
+            <label>Guru</label>
+            <select id="filterGuru" class="filter-control">
+              <option value="">Semua Guru</option>
+            </select>
+          </div>
+          <button class="btn-load-rekap" onclick="loadRekapGuru()">
+            Tampilkan
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-rekap" id="loadingGuru">
+          <div class="loading-spinner-sm"></div>
+          Memuat data absensi guru...
+        </div>
+
+        <!-- Summary -->
+        <div id="summaryRekapGuru"></div>
+
+        <!-- Tabel -->
+        <div class="content-card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   style="width:18px;height:18px;color:var(--green-bright)">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              Rekap Jam Mengajar Guru
+            </div>
+            <div style="font-size:12px;color:var(--text-soft)">
+              JP = Jam Pelajaran
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div id="tableGuru">
+              <div class="empty-rekap">
+                Pilih bulan lalu klik <strong>Tampilkan</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { logout }       from './assets/js/dashboard.js';
+    import { initComplete } from './assets/js/navbar.js';
+
+    const currentPage = window.location.pathname.split('/').pop() || 'rekap-absensi.html';
+    initComplete('sidebarNav', currentPage);
+
+    const sidebar   = document.getElementById('sidebar');
+    const overlay   = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('btnHamburger');
+
+    hamburger.addEventListener('click', () => {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    });
+
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', logout);
+  </script>
+
+  <script type="module" src="assets/js/rekap-absensi.js"></script>
+
+</body>
+</html>

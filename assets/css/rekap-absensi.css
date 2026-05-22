@@ -1,0 +1,295 @@
+/* ============================================================
+   rekap-absensi.css
+   Halaman Rekap & Laporan Absensi
+   ============================================================ */
+
+/* ============================================================
+   TAB SWITCHER
+============================================================ */
+.tab-bar {
+  display: flex;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 6px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0,0,0,0.04);
+  margin-bottom: 20px;
+  gap: 4px;
+}
+
+.tab-btn {
+  flex: 1;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-main);
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.tab-btn svg {
+  width: 16px; height: 16px;
+}
+
+.tab-btn:hover {
+  background: #f0ead8;
+  color: var(--green-mid);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+  color: white;
+  box-shadow: 0 3px 10px rgba(26,58,42,0.25);
+}
+
+/* ============================================================
+   FILTER BAR
+============================================================ */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0,0,0,0.04);
+  margin-bottom: 16px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.filter-field label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--green-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filter-control {
+  height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid #d8d0be;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-family: var(--font-main);
+  background: var(--cream);
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.filter-control:focus {
+  border-color: var(--green-bright);
+  box-shadow: 0 0 0 3px rgba(64,145,108,0.10);
+}
+
+.btn-load-rekap {
+  height: 40px;
+  padding: 0 20px;
+  background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  font-family: var(--font-main);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  box-shadow: 0 3px 10px rgba(26,58,42,0.20);
+  align-self: flex-end;
+}
+
+.btn-load-rekap:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(26,58,42,0.28);
+}
+
+/* ============================================================
+   SUMMARY CARDS
+============================================================ */
+.rekap-summary-grid {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.rekap-stat {
+  flex: 1;
+  min-width: 100px;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0,0,0,0.04);
+  text-align: center;
+}
+
+.rekap-stat-val {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--green-deep);
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.rekap-stat-label {
+  font-size: 12px;
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+/* ============================================================
+   TABEL REKAP
+============================================================ */
+.rekap-table .text-center { text-align: center; }
+
+.rekap-table td,
+.rekap-table th { vertical-align: middle; }
+
+/* Progress bar kehadiran */
+.pct-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 100px;
+}
+
+.pct-bar {
+  height: 8px;
+  border-radius: 10px;
+  flex: 1;
+  transition: width 0.4s ease;
+  min-width: 4px;
+}
+
+.pct-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-mid);
+  white-space: nowrap;
+  min-width: 36px;
+}
+
+/* ============================================================
+   DETAIL ROW (expandable)
+============================================================ */
+.btn-detail {
+  padding: 4px 12px;
+  background: #f0ead8;
+  border: 1px solid #d8d0be;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green-deep);
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-detail:hover {
+  background: #e8dfc8;
+  border-color: var(--green-bright);
+}
+
+.detail-wrap {
+  background: #faf7f0;
+  border-top: 1px solid #ede8d8;
+  padding: 8px;
+}
+
+/* ============================================================
+   LOADING STATE
+============================================================ */
+.loading-rekap {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+
+.loading-spinner-sm {
+  width: 24px; height: 24px;
+  border: 2.5px solid rgba(45,106,79,0.2);
+  border-top-color: var(--green-mid);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   EMPTY STATE
+============================================================ */
+.empty-rekap {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-soft);
+  font-size: 14px;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  border: 1.5px dashed #d8d0be;
+}
+
+.error-text { color: var(--error) !important; }
+
+/* ============================================================
+   TOAST
+============================================================ */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--green-deep);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.toast.show    { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error   { background: var(--error); }
+.toast.success { background: var(--green-mid); }
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 767px) {
+  .filter-bar       { padding: 14px 16px; }
+  .rekap-stat-val   { font-size: 22px; }
+  .pct-bar-wrap     { min-width: 80px; }
+
+  /* Sembunyikan kolom detail di mobile */
+  .rekap-table th:last-child,
+  .rekap-table td:last-child { display: none; }
+}
