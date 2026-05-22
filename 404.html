@@ -1,1 +1,77 @@
-<h1><center>404 Not Found</center></h1>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - Halaman Tidak Ditemukan</title>
+  <link rel="stylesheet" href="assets/css/global.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cream);
+      padding: 1rem;
+      margin: 0;
+    }
+    .error-container {
+      text-align: center;
+      max-width: 500px;
+      padding: 3rem 2rem;
+      background: var(--white);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+    }
+    .error-code {
+      font-size: clamp(6rem, 15vw, 8rem);
+      font-weight: 700;
+      color: var(--green-deep);
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+    .error-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-mid);
+      margin-bottom: 1rem;
+    }
+    .error-desc {
+      font-size: 1rem;
+      color: var(--text-soft);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    .btn-home {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      background: var(--green-mid);
+      color: var(--white);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 1rem;
+      transition: background 0.25s ease, transform 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-home:hover {
+      background: var(--green-bright);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+    .btn-home:active {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="error-container">
+    <div class="error-code">404</div>
+    <h1 class="error-title">Halaman Tidak Ditemukan</h1>
+    <p class="error-desc">
+      Maaf, halaman yang Anda cari tidak tersedia atau telah dipindahkan.
+      Periksa kembali alamat URL atau kembali ke beranda.
+    </p>
+    <a href="index.html" class="btn-home">Kembali ke Beranda</a>
+  </div>
+</body>
+</html>
