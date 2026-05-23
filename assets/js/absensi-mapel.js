@@ -86,7 +86,8 @@ async function loadTeacherSubjects(uid) {
     const snap = await getDocs(
       query(
         collection(db, 'teacher_subjects'),
-        where('teacher_uid', '==', uid)
+        where('teacher_uid', '==', uid),
+        where('status', '==', 'aktif')
       )
     );
 

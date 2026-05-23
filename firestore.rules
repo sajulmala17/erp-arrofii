@@ -147,16 +147,54 @@ service cloud.firestore {
 
     // ----------------------------------------------------------
     // 5. KOLEKSI: teacher_subjects
-    // admin  → Full
-    // kepsek → Read
-    // guru   → Read
-    // lainnya → Tidak ada akses
+    // admin  → Full CRUD
+    // kepsek → Read + Update (hanya field status & approved_by)
+    // guru   → Read hanya milik sendiri (teacher_uid == auth.uid)
+    // tu     → Read + Create + Update draft milik sendiri
+    //          Tidak bisa set status ke 'aktif' langsung
     // ----------------------------------------------------------
     match /teacher_subjects/{docId} {
-      allow read:   if hasRole(['admin', 'kepsek', 'guru']);
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      // Guru hanya bisa baca penugasan miliknya sendiri
+      function isOwnAssignment() {
+        return isGuru() && request.auth.uid == resource.data.teacher_uid;
+      }
+
+      // TU hanya bisa update dokumen yang dia buat dan masih menunggu_approval
+      function isTUDraftOwner() {
+        return isTU()
+               && request.auth.uid == resource.data.created_by
+               && resource.data.status == 'menunggu_approval';
+      }
+
+      // TU tidak boleh langsung set status ke 'aktif'
+      function tuNotApprovingSelf() {
+        return request.resource.data.status != 'aktif';
+      }
+
+      // Kepsek hanya boleh update field status dan approved_by (dan catatan)
+      function kepsekApprovalOnly() {
+        return isKepsek()
+               && request.resource.data.keys().hasOnly(
+                    resource.data.keys().toSet()
+                      .union(['status','approved_by','catatan','updated_at']).toList()
+                  );
+      }
+
+      allow read: if isAdmin()
+                  || isKepsek()
+                  || isOwnAssignment()
+                  || (isTU() && request.auth.uid == resource.data.created_by);
+
+      allow create: if isAdmin()
+                    || (isTU() && request.resource.data.status == 'menunggu_approval'
+                        && request.auth.uid == request.resource.data.created_by);
+
+      allow update: if isAdmin()
+                    || kepsekApprovalOnly()
+                    || (isTUDraftOwner() && tuNotApprovingSelf());
+
+      allow delete: if isAdmin()
+                    || isTUDraftOwner();
     }
 
     // ----------------------------------------------------------

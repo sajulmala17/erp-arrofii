@@ -19,6 +19,7 @@ export const NAV_MENUS = {
     { icon: 'book-open', text: 'Absensi Mapel', href: 'absensi-mapel.html' },
     { icon: 'bar-chart', text: 'Rekap Absensi', href: 'rekap-absensi.html' },
     { label: 'AKADEMIK' },
+    { icon: 'book',    text: 'Mata Pelajaran', href: 'mapel.html' },
     { icon: 'file-text', text: 'Nilai',        href: 'nilai.html' },
     { label: 'KEUANGAN' },
     { icon: 'credit-card', text: 'Billing',    href: 'billing.html' },
@@ -36,6 +37,7 @@ export const NAV_MENUS = {
     { icon: 'book-open', text: 'Absensi Mapel', href: 'absensi-mapel.html' },
     { icon: 'bar-chart', text: 'Rekap Absensi', href: 'rekap-absensi.html' },
     { label: 'AKADEMIK' },
+    { icon: 'book',    text: 'Mata Pelajaran', href: 'mapel.html' },
     { icon: 'file-text', text: 'Nilai',        href: 'nilai.html' },
     { label: 'KEUANGAN' },
     { icon: 'credit-card', text: 'Billing',    href: 'billing.html' },
@@ -52,6 +54,7 @@ export const NAV_MENUS = {
     { icon: 'book-open', text: 'Absensi Mapel', href: 'absensi-mapel.html' },
     { icon: 'bar-chart', text: 'Rekap Absensi', href: 'rekap-absensi.html' },
     { label: 'AKADEMIK' },
+    { icon: 'book',      text: 'Mata Pelajaran', href: 'mapel.html' },
     { icon: 'file-text', text: 'Input Nilai',   href: 'nilai.html' },
     { label: 'KEUANGAN' },
     { icon: 'dollar-sign', text: 'Slip Gaji',   href: 'gaji.html' },
@@ -63,6 +66,8 @@ export const NAV_MENUS = {
     { icon: 'grid',      text: 'Absensi Piket', href: 'piket.html' },
     { icon: 'book-open', text: 'Absensi Mapel', href: 'absensi-mapel.html' },
     { icon: 'bar-chart', text: 'Rekap Absensi', href: 'rekap-absensi.html' },
+    { label: 'AKADEMIK' },
+    { icon: 'book',      text: 'Mata Pelajaran', href: 'mapel.html' },
     { label: 'KEUANGAN' },
     { icon: 'credit-card', text: 'Billing',     href: 'billing.html' },
     { label: 'ADMINISTRASI' },
@@ -99,6 +104,7 @@ const ICONS = {
   'cart': '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
   'book-open': '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
   'bar-chart': '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+  'book': '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
 };
 
 /**

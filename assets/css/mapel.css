@@ -1,0 +1,365 @@
+/* ============================================================
+   mapel.css
+   Styling halaman Mata Pelajaran (Master Mapel + Penugasan Guru)
+   ============================================================ */
+
+/* ============================================================
+   TABS
+============================================================ */
+.mapel-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0,0,0,0.04);
+  width: fit-content;
+}
+
+.mapel-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.mapel-tab svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.mapel-tab:hover {
+  background: #f0f7f4;
+  color: var(--green-mid);
+}
+
+.mapel-tab.active {
+  background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+  color: white;
+  box-shadow: 0 3px 10px rgba(26,58,42,0.25);
+}
+
+/* ============================================================
+   TAB PANELS
+============================================================ */
+.tab-panel {
+  display: none;
+  animation: fadeUp 0.3s both;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* ============================================================
+   TOOLBAR
+============================================================ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-input,
+.filter-select {
+  height: 38px;
+  padding: 0 12px;
+  border: 1.5px solid #ddd8c8;
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: var(--font-main);
+  background: var(--white);
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filter-input {
+  min-width: 180px;
+  padding-left: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  border-color: var(--green-bright);
+  box-shadow: 0 0 0 3px rgba(64,145,108,0.10);
+}
+
+.btn-tambah {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+  color: white;
+  border: none;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 10px rgba(26,58,42,0.25);
+  white-space: nowrap;
+}
+
+.btn-tambah:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(26,58,42,0.30);
+}
+
+.btn-tambah svg { width: 16px; height: 16px; }
+
+.btn-salin {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
+  background: var(--white);
+  color: var(--green-mid);
+  border: 1.5px solid var(--green-light);
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-salin:hover {
+  background: #f0f7f4;
+  border-color: var(--green-mid);
+}
+
+.btn-salin svg { width: 15px; height: 15px; }
+
+/* ============================================================
+   PENDING APPROVAL BANNER
+============================================================ */
+.pending-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fff8e1;
+  border: 1.5px solid #ffe082;
+  border-radius: var(--radius-md);
+  color: #f57f17;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.pending-banner svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   STATUS BADGES (penugasan)
+============================================================ */
+.badge-aktif-ts {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-pending {
+  background: #fff8e1;
+  color: #f57f17;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-ditolak {
+  background: #fdecea;
+  color: #c62828;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   AKSI BUTTONS (dalam tabel)
+============================================================ */
+.aksi-wrap {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.btn-aksi {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-main);
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-aksi:hover { filter: brightness(0.92); transform: translateY(-1px); }
+
+.btn-aksi.edit     { background: #e3f2fd; color: #1565c0; }
+.btn-aksi.hapus    { background: #fdecea; color: #c62828; }
+.btn-aksi.approve  { background: #e8f5e9; color: #2e7d32; }
+.btn-aksi.tolak    { background: #fdecea; color: #c62828; }
+
+/* ============================================================
+   CATATAN DITOLAK (inline di tabel)
+============================================================ */
+.catatan-ditolak {
+  font-size: 11.5px;
+  color: var(--error);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ============================================================
+   SALIN LIST (modal salin)
+============================================================ */
+.salin-list-wrap {
+  border: 1.5px solid #ddd8c8;
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: #faf7f0;
+}
+
+.salin-list {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.salin-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--white);
+  border-radius: 9px;
+  border: 1.5px solid #ede8d8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.salin-item:hover { border-color: var(--green-light); }
+
+.salin-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--green-mid);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.salin-item-info { flex: 1; }
+
+.salin-item-name {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.salin-item-meta {
+  font-size: 11.5px;
+  color: var(--text-soft);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   RESPONSIVE — Mobile
+============================================================ */
+@media (max-width: 767px) {
+  .mapel-tabs {
+    width: 100%;
+  }
+
+  .mapel-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 9px 10px;
+    font-size: 12.5px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-left,
+  .toolbar-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-input,
+  .filter-select,
+  .btn-tambah,
+  .btn-salin {
+    width: 100%;
+  }
+
+  .btn-tambah {
+    justify-content: center;
+  }
+
+  .btn-salin {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .mapel-tab span { display: none; }
+}
