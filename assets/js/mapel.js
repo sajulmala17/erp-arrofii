@@ -6,6 +6,7 @@
 
 import { auth }                    from './firebase-config.js';
 import { guardPage, getSession }   from './auth-guard.js';
+import { getIcon }                 from './navbar.js';
 import { onAuthStateChanged }      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore,
          collection,
@@ -185,6 +186,7 @@ function namaMapel(sid)    { return allSubjects.find(s => s.subject_id === sid)?
 function namaKelas(cid)    { return allClasses.find(c => c.class_id === cid)?.name ?? cid; }
 function jenjangMapel(sid) { return allSubjects.find(s => s.subject_id === sid)?.jenjang ?? ''; }
 function escHtml(str)      { return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function svgIcon(name)     { return `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${getIcon(name)}</svg>`; }
 
 // =============================================================
 //  RENDER TABEL MASTER MAPEL (desktop)
@@ -217,8 +219,8 @@ function renderTabelMapel() {
       ${isAdmin ? `
       <td>
         <div class="aksi-wrap">
-          <button class="btn-aksi edit"  onclick="openEditMapel('${s.subject_id}')">✏️ Edit</button>
-          <button class="btn-aksi hapus" onclick="hapusMapel('${s.subject_id}')">🗑️ Hapus</button>
+          <button class="btn-aksi edit"  title="Edit" onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')}</button>
+          <button class="btn-aksi hapus" title="Hapus" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
         </div>
       </td>` : ''}
     </tr>
@@ -228,7 +230,7 @@ function renderTabelMapel() {
   document.getElementById('cardListMapel').innerHTML = rows.map(s => `
     <div class="mapel-card">
       <div class="mapel-card-head">
-        <div class="mapel-card-icon">📚</div>
+        <div class="mapel-card-icon">${svgIcon('book')}</div>
         <div class="mapel-card-info">
           <div class="mapel-card-name">${escHtml(s.name)}</div>
           <div class="mapel-card-meta">${escHtml(s.jenjang)} · KKM ${s.kkm}</div>
@@ -236,8 +238,8 @@ function renderTabelMapel() {
       </div>
       ${isAdmin ? `
       <div class="mapel-card-foot">
-        <button class="btn-aksi edit"  onclick="openEditMapel('${s.subject_id}')">✏️ Edit</button>
-        <button class="btn-aksi hapus" onclick="hapusMapel('${s.subject_id}')">🗑️ Hapus</button>
+        <button class="btn-aksi edit"  title="Edit" onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')}</button>
+        <button class="btn-aksi hapus" title="Hapus" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
       </div>` : ''}
     </div>
   `).join('');
@@ -330,11 +332,11 @@ function buildAksiPenugasan(p, role, isCard) {
   const id = p.doc_id;
   if (role === 'admin') {
     return `<div class="aksi-wrap">
-      <button class="btn-aksi edit"  onclick="openEditPenugasan('${id}')">✏️ Edit</button>
-      <button class="btn-aksi hapus" onclick="hapusPenugasan('${id}')">🗑️ Hapus</button>
+      <button class="btn-aksi edit"  title="Edit"  onclick="openEditPenugasan('${id}')">${svgIcon('edit')}</button>
+      <button class="btn-aksi hapus" title="Hapus" onclick="hapusPenugasan('${id}')">${svgIcon('delete')}</button>
       ${p.status === 'menunggu_approval' ? `
-      <button class="btn-aksi approve" onclick="approvePenugasan('${id}')">✅ Approve</button>
-      <button class="btn-aksi tolak"   onclick="openTolak('${id}')">❌ Tolak</button>` : ''}
+      <button class="btn-aksi approve" title="Setujui" onclick="approvePenugasan('${id}')">${svgIcon('check')}</button>
+      <button class="btn-aksi tolak"   title="Tolak"   onclick="openTolak('${id}')">${svgIcon('x')}</button>` : ''}
     </div>`;
   }
   if (role === 'tu') {
@@ -344,14 +346,14 @@ function buildAksiPenugasan(p, role, isCard) {
     const bisRevisi    = milikSendiri && p.status === 'ditolak';
     if (!bisDiedit && !bisDihapus && !bisRevisi) return '—';
     return `<div class="aksi-wrap">
-      ${(bisDiedit || bisRevisi) ? `<button class="btn-aksi edit" onclick="openEditPenugasan('${id}')">✏️ Edit</button>` : ''}
-      ${bisDihapus ? `<button class="btn-aksi hapus" onclick="hapusPenugasan('${id}')">🗑️ Hapus</button>` : ''}
+      ${(bisDiedit || bisRevisi) ? `<button class="btn-aksi edit" title="Edit" onclick="openEditPenugasan('${id}')">${svgIcon('edit')}</button>` : ''}
+      ${bisDihapus ? `<button class="btn-aksi hapus" title="Hapus" onclick="hapusPenugasan('${id}')">${svgIcon('delete')}</button>` : ''}
     </div>`;
   }
   if (role === 'kepsek' && p.status === 'menunggu_approval') {
     return `<div class="aksi-wrap">
-      <button class="btn-aksi approve" onclick="approvePenugasan('${id}')">✅ Approve</button>
-      <button class="btn-aksi tolak"   onclick="openTolak('${id}')">❌ Tolak</button>
+      <button class="btn-aksi approve" title="Setujui" onclick="approvePenugasan('${id}')">${svgIcon('check')}</button>
+      <button class="btn-aksi tolak"   title="Tolak"   onclick="openTolak('${id}')">${svgIcon('x')}</button>
     </div>`;
   }
   return '—';

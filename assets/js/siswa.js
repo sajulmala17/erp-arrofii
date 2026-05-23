@@ -13,6 +13,7 @@
 
 import { auth, getToken }               from './firebase-config.js';
 import { guardPage, getSession }        from './auth-guard.js';
+import { getIcon }                      from './navbar.js';
 import { onAuthStateChanged }           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore,
          collection,
@@ -166,33 +167,28 @@ function renderTable(data) {
   const kelasMap = {};
   allKelas.forEach(k => { kelasMap[k.id] = k.name; });
 
+  const svgWrap = (name, stroke = 'currentColor') =>
+    `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${getIcon(name)}</svg>`;
+  const svgBadge = (name, stroke, size = '1.5em') =>
+    `<svg viewBox="0 0 24 24" width="${size}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">${getIcon(name)}</svg>`;
+
   const rows = data.map(s => {
     const statusBadge = s.aktif === false
-      ? '<span class="badge badge-nonaktif" title="Siswa Nonaktif"><svg viewBox="0 0 24 24" width="1.5em"  fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg></span>'
-      : '<span class="badge badge-aktif" title="Siswa Aktif"><svg viewBox="0 0 24 24" width="1.5em" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg></span>';
+      ? `<span class="badge badge-nonaktif" title="Siswa Nonaktif">${svgBadge('user-x', '#dc3545')}</span>`
+      : `<span class="badge badge-aktif" title="Siswa Aktif">${svgBadge('user-check', '#28a745')}</span>`;
 
     // [FIX-3] Gunakan s.id untuk operasi Firestore, s.student_id untuk Cloud Function
     const aksiHtml = canEdit ? `
       <div class="aksi-wrap">
         <button class="btn-aksi edit"   title="Edit siswa"
-                onclick="openEdit('${s.id}')">
-          <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-        </button>
-        <button class="btn-aksi pin"   title="Edit PIN"
-                onclick="openPin('${s.student_id}', '${s.name}')">
-          <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-        </button>
+                onclick="openEdit('${s.id}')">${svgWrap('edit')}</button>
+        <button class="btn-aksi pin"    title="Edit PIN"
+                onclick="openPin('${s.student_id}', '${s.name}')">${svgWrap('pin')}</button>
         ${s.aktif !== false
-          ? `<button class="btn-aksi nonaktif"
-                     onclick="toggleAktif('${s.id}', false)"
-                     title="Nonaktifkan">
-               <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5" width="22" height="14" rx="7" ry="7"></rect><circle cx="8" cy="12" r="3"></circle></svg>
-             </button>`
-          : `<button class="btn-aksi aktif"
-                     onclick="toggleAktif('${s.id}', true)"
-                     title="Aktifkan">
-               <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5" width="22" height="14" rx="7" ry="7"></rect><circle cx="16" cy="12" r="3"></circle></svg>
-             </button>`
+          ? `<button class="btn-aksi nonaktif" title="Nonaktifkan"
+                     onclick="toggleAktif('${s.id}', false)">${svgWrap('toggle-off')}</button>`
+          : `<button class="btn-aksi aktif" title="Aktifkan"
+                     onclick="toggleAktif('${s.id}', true)">${svgWrap('toggle-on')}</button>`
         }
       </div>` : '—';
 
@@ -213,10 +209,10 @@ function renderTable(data) {
 
   // Mobile cards
   const cards = data.map(s => {
-    const kelasNama = kelasMap[s.class_id] || s.class_id || '—';
-    const statusBadge = s.aktif === false
-      ? '<span class="badge badge-nonaktif"><svg viewBox="0 0 24 24" width="1.5em"  fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg></span>'
-      : '<span class="badge badge-aktif"><svg viewBox="0 0 24 24" width="1.5em" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg></span>';
+    const kelasNama   = kelasMap[s.class_id] || s.class_id || '—';
+    const cardBadge   = s.aktif === false
+      ? `<span class="badge badge-nonaktif">${svgBadge('user-x', '#dc3545')}</span>`
+      : `<span class="badge badge-aktif">${svgBadge('user-check', '#28a745')}</span>`;
     return `
       <div class="siswa-card ${s.aktif === false ? 'card-nonaktif' : ''}">
         <div class="siswa-card-head">
@@ -227,7 +223,7 @@ function renderTable(data) {
             <div class="siswa-card-name">${s.name}</div>
             <div class="siswa-card-meta">${s.nisn || '—'} · ${kelasNama}</div>
           </div>
-          ${statusBadge}
+          ${cardBadge}
         </div>
         <div class="siswa-card-body">
           <div class="siswa-card-row">
@@ -248,21 +244,15 @@ function renderTable(data) {
         </div>
         ${canEdit ? `
         <div class="siswa-card-foot">
-          <button class="btn-aksi edit"
-                  onclick="openEdit('${s.id}')"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-          </button>
-          <button class="btn-aksi pin"
-                  onclick="openPin('${s.student_id}', '${s.name}')"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-          </button>
+          <button class="btn-aksi edit"    title="Edit siswa"
+                  onclick="openEdit('${s.id}')">${svgWrap('edit')}</button>
+          <button class="btn-aksi pin"     title="Edit PIN"
+                  onclick="openPin('${s.student_id}', '${s.name}')">${svgWrap('pin')}</button>
           ${s.aktif !== false
-            ? `<button class="btn-aksi nonaktif"
-                       onclick="toggleAktif('${s.id}', false)">
-                 <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5" width="22" height="14" rx="7" ry="7"></rect><circle cx="8" cy="12" r="3"></circle></svg>
-               </button>`
-            : `<button class="btn-aksi aktif"
-                       onclick="toggleAktif('${s.id}', true)">
-                 <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5" width="22" height="14" rx="7" ry="7"></rect><circle cx="16" cy="12" r="3"></circle></svg>
-               </button>`
+            ? `<button class="btn-aksi nonaktif" title="Nonaktifkan"
+                       onclick="toggleAktif('${s.id}', false)">${svgWrap('toggle-off')}</button>`
+            : `<button class="btn-aksi aktif" title="Aktifkan"
+                       onclick="toggleAktif('${s.id}', true)">${svgWrap('toggle-on')}</button>`
           }
         </div>` : ''}
       </div>

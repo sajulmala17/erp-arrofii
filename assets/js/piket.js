@@ -11,6 +11,7 @@
 
 import { auth, getToken }         from './firebase-config.js';
 import { guardPage, getSession }  from './auth-guard.js';
+import { getIcon }                from './navbar.js';
 import { onAuthStateChanged }     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore,
          collection,
@@ -39,12 +40,17 @@ let currentRole     = '';
 let currentUid      = '';
 let isReadOnly      = false;
 
+// Helper SVG inline untuk status buttons
+function si(name) {
+  return `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${getIcon(name)}</svg>`;
+}
+
 // Status warna
 const STATUS_CONFIG = {
-  hadir    : { label: 'Hadir',     color: '#2d6a4f', bg: '#e8f5e9', icon: '✓' },
-  sakit    : { label: 'Sakit',     color: '#e67e22', bg: '#fef9e7', icon: '🤒' },
-  izin     : { label: 'Izin',      color: '#2980b9', bg: '#eaf4fb', icon: '📋' },
-  alpha    : { label: 'Alpha',     color: '#c0392b', bg: '#fdecea', icon: '✗' },
+  hadir    : { label: 'Hadir',     color: '#2d6a4f', bg: '#e8f5e9', icon: () => si('check') },
+  sakit    : { label: 'Sakit',     color: '#e67e22', bg: '#fef9e7', icon: () => si('thermometer') },
+  izin     : { label: 'Izin',      color: '#2980b9', bg: '#eaf4fb', icon: () => si('clipboard') },
+  alpha    : { label: 'Alpha',     color: '#c0392b', bg: '#fdecea', icon: () => si('x') },
 };
 
 const STATUS_CYCLE = ['hadir', 'sakit', 'izin', 'alpha'];
@@ -183,7 +189,7 @@ function renderSiswaList() {
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="empty-absen">
-        <div class="empty-absen-icon">📋</div>
+        <div class="empty-absen-icon">${si('users')}</div>
         <div>Tidak ada siswa ditemukan</div>
       </div>`;
     return;
@@ -252,7 +258,7 @@ function renderSiswaItem(siswa) {
                   onclick="${isReadOnly ? 'event.stopPropagation()' : `setStatus('${siswa.student_id}', '${s}', event)`}"
                   title="${STATUS_CONFIG[s].label}"
                   ${disabled}>
-            ${STATUS_CONFIG[s].icon}
+            ${STATUS_CONFIG[s].icon()}
           </button>
         `).join('')}
       </div>

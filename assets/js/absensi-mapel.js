@@ -13,6 +13,7 @@
 
 import { auth, getToken }         from './firebase-config.js';
 import { guardPage, getSession }  from './auth-guard.js';
+import { getIcon }                from './navbar.js';
 import { onAuthStateChanged }     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore,
          collection,
@@ -42,13 +43,18 @@ let selectedMapel   = null; // { subject_id, subject_name, class_id, class_name,
 let existingDocId   = null;
 let teacherSubjects = [];   // daftar mapel+kelas yang diajar guru ini
 
+// Helper SVG inline untuk status buttons
+function si(name) {
+  return `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${getIcon(name)}</svg>`;
+}
+
 // Status siswa
 const STATUS_SISWA = {
-  hadir    : { label: 'Hadir',     color: '#2d6a4f', bg: '#e8f5e9', icon: '✓' },
-  sakit    : { label: 'Sakit',     color: '#e67e22', bg: '#fef9e7', icon: '🤒' },
-  izin     : { label: 'Izin',      color: '#2980b9', bg: '#eaf4fb', icon: '📋' },
-  alpha    : { label: 'Alpha',     color: '#c0392b', bg: '#fdecea', icon: '✗' },
-  terlambat: { label: 'Terlambat', color: '#8e44ad', bg: '#f5eef8', icon: '⏰' },
+  hadir    : { label: 'Hadir',     color: '#2d6a4f', bg: '#e8f5e9', icon: () => si('check') },
+  sakit    : { label: 'Sakit',     color: '#e67e22', bg: '#fef9e7', icon: () => si('thermometer') },
+  izin     : { label: 'Izin',      color: '#2980b9', bg: '#eaf4fb', icon: () => si('clipboard') },
+  alpha    : { label: 'Alpha',     color: '#c0392b', bg: '#fdecea', icon: () => si('x') },
+  terlambat: { label: 'Terlambat', color: '#8e44ad', bg: '#f5eef8', icon: () => si('clock') },
 };
 
 const STATUS_CYCLE = ['hadir', 'sakit', 'izin', 'alpha', 'terlambat'];
@@ -137,7 +143,7 @@ function renderKelasList() {
   if (teacherSubjects.length === 0) {
     container.innerHTML = `
       <div class="empty-mapel">
-        <div class="empty-mapel-icon">📚</div>
+        <div class="empty-mapel-icon">${si('book-open')}</div>
         <div>Belum ada mata pelajaran yang ditugaskan</div>
       </div>`;
     return;
@@ -337,7 +343,7 @@ function renderSiswaMapel() {
   );
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div class="empty-absen"><div class="empty-absen-icon">📋</div><div>Tidak ada siswa</div></div>`;
+    container.innerHTML = `<div class="empty-absen"><div class="empty-absen-icon">${si('users')}</div><div>Tidak ada siswa</div></div>`;
     return;
   }
 
@@ -362,7 +368,7 @@ function renderSiswaMapel() {
                     data-status="${st}"
                     onclick="setStatusMapel('${s.student_id}', '${st}', event)"
                     title="${STATUS_SISWA[st].label}">
-              ${STATUS_SISWA[st].icon}
+              ${STATUS_SISWA[st].icon()}
             </button>
           `).join('')}
         </div>
