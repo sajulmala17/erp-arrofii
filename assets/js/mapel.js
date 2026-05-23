@@ -39,6 +39,11 @@ let editMapelId     = null;
 let editPenugasanId = null;
 let tolakTargetId   = null;
 
+// Pagination
+const PAGE_SIZE = 10;
+let pageMapel     = 1;
+let pagePenugasan = 1;
+
 // =============================================================
 //  AUTH INIT
 // =============================================================
@@ -76,6 +81,7 @@ function applyRoleUI() {
   const isAdmin  = currentRole === 'admin';
   const isTU     = currentRole === 'tu';
   const isKepsek = currentRole === 'kepsek';
+  const isGuru   = currentRole === 'guru';
 
   // Tab Master — tombol tambah hanya admin
   document.getElementById('btnTambahMapel').style.display = isAdmin ? 'flex' : 'none';
@@ -86,6 +92,19 @@ function applyRoleUI() {
 
   // Pending banner — hanya kepsek
   if (isKepsek) document.getElementById('pendingBanner').style.display = '';
+
+  // Guru-specific UI
+  if (isGuru) {
+    // Sembunyikan toolbar kanan (tombol tambah & salin)
+    document.getElementById('toolbarPenugasanRight').style.display = 'none';
+
+    // Ubah judul tab penugasan jadi "Penugasan Saya"
+    const tabPenugasan = document.querySelector('[data-tab="penugasan"]');
+    if (tabPenugasan) {
+      const span = tabPenugasan.querySelector('span');
+      if (span) span.textContent = 'Penugasan Saya';
+    }
+  }
 }
 
 // =============================================================
@@ -197,11 +216,20 @@ function renderTabelMapel() {
   const search  = document.getElementById('searchMapel').value.toLowerCase();
   const jenjang = document.getElementById('filterJenjangMapel').value;
   const isAdmin = currentRole === 'admin';
+  const isGuru  = currentRole === 'guru';
 
   const rows = allSubjects.filter(s =>
     s.name.toLowerCase().includes(search) &&
     (jenjang === '' || s.jenjang === jenjang)
   );
+
+  // Pagination
+  const totalMapel = rows.length;
+  const totalPageMapel = Math.ceil(totalMapel / PAGE_SIZE);
+  if (pageMapel > totalPageMapel) pageMapel = 1;
+  const start = (pageMapel - 1) * PAGE_SIZE;
+  const end   = start + PAGE_SIZE;
+  const rowsHalIni = rows.slice(start, end);
 
   const colspan = isAdmin ? 4 : 3;
   const tbody   = document.getElementById('tbodyMapel');
@@ -210,26 +238,53 @@ function renderTabelMapel() {
     tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-cell">Tidak ada data.</td></tr>`;
     document.getElementById('cardListMapel').innerHTML =
       `<div style="text-align:center;padding:32px;color:var(--text-soft)">Tidak ada data.</div>`;
+    document.getElementById('paginasiMapel').innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = rows.map(s => `
+  tbody.innerHTML = rowsHalIni.map(s => {
+    // Cek apakah mapel ini ditugaskan ke guru yang login
+    const ditugaskan = allPenugasan.some(p =>
+      p.subject_id === s.subject_id &&
+      p.teacher_uid === currentUid &&
+      p.status === 'aktif'
+    );
+
+    // Tombol Edit KKM hanya untuk guru yang ditugaskan
+    const aksiGuru = (isGuru && ditugaskan)
+      ? `<button class="btn-aksi edit" onclick="openEditKKM('${s.subject_id}', ${s.kkm})" title="Edit KKM">KKM</button>`
+      : '';
+
+    return `
     <tr>
       <td>${escHtml(s.name)}</td>
       <td>${escHtml(s.jenjang)}</td>
       <td>${s.kkm}</td>
-      ${isAdmin ? `
       <td>
         <div class="aksi-wrap">
-          <button class="btn-aksi edit"  title="Edit" onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')}</button>
-          <button class="btn-aksi hapus" title="Hapus" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
+          ${isAdmin ? `
+            <button class="btn-aksi edit"  title="Edit" onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')}</button>
+            <button class="btn-aksi hapus" title="Hapus" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
+          ` : ''}
+          ${aksiGuru}
         </div>
-      </td>` : ''}
-    </tr>
-  `).join('');
+      </td>
+    </tr>`;
+  }).join('');
 
   // Mobile cards
-  document.getElementById('cardListMapel').innerHTML = rows.map(s => `
+  document.getElementById('cardListMapel').innerHTML = rowsHalIni.map(s => {
+    const ditugaskan = allPenugasan.some(p =>
+      p.subject_id === s.subject_id &&
+      p.teacher_uid === currentUid &&
+      p.status === 'aktif'
+    );
+
+    const aksiGuru = (isGuru && ditugaskan)
+      ? `<button class="btn-aksi edit" onclick="openEditKKM('${s.subject_id}', ${s.kkm})" title="Edit KKM">KKM</button>`
+      : '';
+
+    return `
     <div class="mapel-card">
       <div class="mapel-card-head">
         <div class="mapel-card-icon">${svgIcon('book')}</div>
@@ -238,13 +293,18 @@ function renderTabelMapel() {
           <div class="mapel-card-meta">${escHtml(s.jenjang)} · KKM ${s.kkm}</div>
         </div>
       </div>
-      ${isAdmin ? `
       <div class="mapel-card-foot">
-        <button class="btn-aksi edit"  title="Edit" onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')}</button>
-        <button class="btn-aksi hapus" title="Hapus" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
-      </div>` : ''}
-    </div>
-  `).join('');
+        ${isAdmin ? `
+          <button class="btn-aksi edit"  title="Edit" onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')}</button>
+          <button class="btn-aksi hapus" title="Hapus" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
+        ` : ''}
+        ${aksiGuru}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Render pagination
+  renderPaginasi('paginasiMapel', pageMapel, totalPageMapel, 'goToPageMapel');
 }
 
 // =============================================================
@@ -264,16 +324,25 @@ function renderTabelPenugasan() {
     (jenjang === '' || jenjangMapel(p.subject_id) === jenjang)
   );
 
+  // Pagination
+  const totalPenugasan = rows.length;
+  const totalPagePenugasan = Math.ceil(totalPenugasan / PAGE_SIZE);
+  if (pagePenugasan > totalPagePenugasan) pagePenugasan = 1;
+  const start = (pagePenugasan - 1) * PAGE_SIZE;
+  const end   = start + PAGE_SIZE;
+  const rowsHalIni = rows.slice(start, end);
+
   const tbody = document.getElementById('tbodyPenugasan');
 
   if (rows.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">Tidak ada data.</td></tr>`;
     document.getElementById('cardListPenugasan').innerHTML =
       `<div style="text-align:center;padding:32px;color:var(--text-soft)">Tidak ada data.</div>`;
+    document.getElementById('paginasiPenugasan').innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = rows.map(p => {
+  tbody.innerHTML = rowsHalIni.map(p => {
     const aksiHtml = buildAksiPenugasan(p, role, false);
     return `
       <tr>
@@ -288,7 +357,7 @@ function renderTabelPenugasan() {
   }).join('');
 
   // Mobile cards
-  document.getElementById('cardListPenugasan').innerHTML = rows.map(p => `
+  document.getElementById('cardListPenugasan').innerHTML = rowsHalIni.map(p => `
     <div class="penugasan-card">
       <div class="penugasan-card-head">
         <div class="penugasan-card-avatar">
@@ -318,6 +387,9 @@ function renderTabelPenugasan() {
       </div>
     </div>
   `).join('');
+
+  // Render pagination
+  renderPaginasi('paginasiPenugasan', pagePenugasan, totalPagePenugasan, 'goToPagePenugasan');
 }
 
 function buildStatusBadge(p) {
@@ -403,13 +475,22 @@ function bindEvents() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab))
   );
 
-  // Filter Master Mapel
-  document.getElementById('searchMapel').addEventListener('input', renderTabelMapel);
-  document.getElementById('filterJenjangMapel').addEventListener('change', renderTabelMapel);
+  // Filter Master Mapel — reset page ke 1
+  document.getElementById('searchMapel').addEventListener('input', () => {
+    pageMapel = 1;
+    renderTabelMapel();
+  });
+  document.getElementById('filterJenjangMapel').addEventListener('change', () => {
+    pageMapel = 1;
+    renderTabelMapel();
+  });
 
-  // Filter Penugasan
+  // Filter Penugasan — reset page ke 1
   ['filterTahunAjaran','filterSemester','filterJenjangPenugasan','filterStatus'].forEach(id =>
-    document.getElementById(id).addEventListener('change', renderTabelPenugasan)
+    document.getElementById(id).addEventListener('change', () => {
+      pagePenugasan = 1;
+      renderTabelPenugasan();
+    })
   );
 
   // Modal Mapel
@@ -428,6 +509,9 @@ function bindEvents() {
   document.getElementById('btnCloseModalTolak').addEventListener('click', () => closeModal('modalTolak'));
   document.getElementById('btnCancelTolak').addEventListener('click', () => closeModal('modalTolak'));
   document.getElementById('btnSubmitTolak').addEventListener('click', submitTolak);
+
+  // Modal Edit KKM
+  document.getElementById('btnSubmitKKM').addEventListener('click', submitEditKKM);
 
   // Modal Salin
   document.getElementById('btnSalinTahunLalu').addEventListener('click', openModalSalin);
@@ -465,6 +549,19 @@ function closeModal(id) {
   document.getElementById(id).classList.remove('show');
   document.body.style.overflow = '';
 }
+// Expose to global scope for inline onclick handlers in HTML
+window.closeModal = closeModal;
+window.submitEditKKM = submitEditKKM;
+
+// Global pagination callbacks (needed for inline onclick in rendered HTML)
+window.goToPageMapel = function(hal) {
+  pageMapel = hal;
+  renderTabelMapel();
+};
+window.goToPagePenugasan = function(hal) {
+  pagePenugasan = hal;
+  renderTabelPenugasan();
+};
 
 // =============================================================
 //  MASTER MAPEL — CRUD
@@ -739,6 +836,104 @@ async function submitSalin() {
     showToast('Gagal menyalin. Coba lagi.', 'error');
   } finally {
     setBtnLoading('btnSubmitSalin', false, 'Salin yang Dipilih');
+  }
+}
+
+// =============================================================
+//  PAGINATION HELPER
+// =============================================================
+function renderPaginasi(containerId, currentPage, totalPages, onPageChange) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  // Sembunyikan paginasi jika hanya 1 halaman
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+  const buttons = [];
+
+  // Tombol Sebelumnya
+  buttons.push(`
+    <button class="paginasi-btn ${currentPage === 1 ? 'disabled' : ''}"
+            onclick="(${onPageChange})(${currentPage - 1})"
+            ${currentPage === 1 ? 'disabled' : ''}>&lsaquo;</button>
+  `);
+
+  // Nomor halaman — tampilkan max 5 halaman di sekitar halaman aktif
+  const range = 2;
+  for (let i = 1; i <= totalPages; i++) {
+    if (
+      i === 1 || i === totalPages ||
+      (i >= currentPage - range && i <= currentPage + range)
+    ) {
+      buttons.push(`
+        <button class="paginasi-btn ${i === currentPage ? 'active' : ''}"
+                onclick="(${onPageChange})(${i})">${i}</button>
+      `);
+    } else if (
+      i === currentPage - range - 1 ||
+      i === currentPage + range + 1
+    ) {
+      buttons.push(`<span class="paginasi-dots">&hellip;</span>`);
+    }
+  }
+
+  // Tombol Berikutnya
+  buttons.push(`
+    <button class="paginasi-btn ${currentPage === totalPages ? 'disabled' : ''}"
+            onclick="(${onPageChange})(${currentPage + 1})"
+            ${currentPage === totalPages ? 'disabled' : ''}>&rsaquo;</button>
+  `);
+
+  el.innerHTML = `
+    <div class="paginasi-info">
+      Halaman ${currentPage} dari ${totalPages}
+    </div>
+    <div class="paginasi-wrap">${buttons.join('')}</div>
+  `;
+}
+
+// =============================================================
+//  EDIT KKM (Guru)
+// =============================================================
+// Buka modal kecil untuk edit KKM saja
+window.openEditKKM = function(subject_id, kkmSaat) {
+  document.getElementById('kkmSubjectId').value  = subject_id;
+  document.getElementById('inputKKMEdit').value  = kkmSaat;
+  openModal('modalEditKKM');
+};
+
+// Submit edit KKM
+async function submitEditKKM() {
+  const subject_id = document.getElementById('kkmSubjectId').value;
+  const kkm        = parseInt(document.getElementById('inputKKMEdit').value, 10);
+
+  if (isNaN(kkm) || kkm < 0 || kkm > 100) {
+    showToast('KKM harus antara 0–100.', 'error');
+    return;
+  }
+
+  // Verifikasi guru ini memang ditugaskan ke mapel ini
+  const boleh = allPenugasan.some(p =>
+    p.subject_id === subject_id &&
+    p.teacher_uid === currentUid &&
+    p.status === 'aktif'
+  );
+
+  if (!boleh) {
+    showToast('Anda tidak memiliki akses untuk edit KKM ini.', 'error');
+    return;
+  }
+
+  setBtnLoading('btnSubmitKKM', true);
+  try {
+    await updateDoc(doc(db, 'subjects', subject_id), { kkm });
+    showToast('KKM berhasil diperbarui.', 'success');
+    closeModal('modalEditKKM');
+    await loadSubjects();
+  } catch (err) {
+    showToast('Gagal update KKM.', 'error');
+  } finally {
+    setBtnLoading('btnSubmitKKM', false, 'Simpan');
   }
 }
 

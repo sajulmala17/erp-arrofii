@@ -127,7 +127,12 @@ service cloud.firestore {
     match /subjects/{subjectId} {
       allow read:   if hasRole(['admin', 'kepsek', 'guru']);
       allow create: if isAdmin();
-      allow update: if isAdmin();
+      allow update: if isAdmin()
+                    || (isGuru()
+                        && request.resource.data.keys().hasOnly(['kkm'])
+                        && request.resource.data.kkm is int
+                        && request.resource.data.kkm >= 0
+                        && request.resource.data.kkm <= 100);
       allow delete: if isAdmin();
     }
 
