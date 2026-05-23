@@ -143,7 +143,7 @@ function renderKelasList() {
   if (teacherSubjects.length === 0) {
     container.innerHTML = `
       <div class="empty-mapel">
-        <div class="empty-mapel-icon">${si('book-open')}</div>
+        <div class="empty-mapel-icon"><center>${si('book-open')}</center></div>
         <div>Belum ada mata pelajaran yang ditugaskan</div>
       </div>`;
     return;
