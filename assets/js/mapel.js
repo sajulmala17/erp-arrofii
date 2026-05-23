@@ -56,7 +56,9 @@ onAuthStateChanged(auth, async (user) => {
   if (roleEl) roleEl.textContent = labelRole(role);
 
   // Avatar inisial
-  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const initials = name
+  ? name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  : '?';
   ['sidebarAvatar', 'topbarAvatar'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = initials;
@@ -119,7 +121,7 @@ async function loadClasses() {
 
 async function loadTeachers() {
   try {
-    const snap = await getDocs(query(collection(db, 'users'), where('role', '==', 'guru'), orderBy('displayName')));
+    const snap = await getDocs(query(collection(db, 'users'), where('role', '==', 'guru'), orderBy('name')));
     allTeachers = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
   } catch (err) {
     console.error('[loadTeachers]', err);
@@ -181,7 +183,7 @@ function showPenugasanLoading() {
 // =============================================================
 //  HELPERS
 // =============================================================
-function namaGuru(uid)     { return allTeachers.find(t => t.uid === uid)?.displayName ?? uid; }
+function namaGuru(uid)     { return allTeachers.find(t => t.uid === uid)?.name ?? uid; }
 function namaMapel(sid)    { return allSubjects.find(s => s.subject_id === sid)?.name ?? sid; }
 function namaKelas(cid)    { return allClasses.find(c => c.class_id === cid)?.name ?? cid; }
 function jenjangMapel(sid) { return allSubjects.find(s => s.subject_id === sid)?.jenjang ?? ''; }
@@ -377,7 +379,7 @@ function populateClassSelect() {
 function populateTeacherSelect() {
   document.getElementById('inputGuruPenugasan').innerHTML =
     '<option value="">-- Pilih Guru --</option>' +
-    allTeachers.map(t => `<option value="${t.uid}">${escHtml(t.displayName)}</option>`).join('');
+    allTeachers.map(t => `<option value="${t.uid}">${escHtml(t.name)}</option>`).join('');
 }
 
 function collectTahunAjaran() {
