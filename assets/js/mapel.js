@@ -260,10 +260,19 @@ function renderTabelMapel() {
   const isAdmin = currentRole === 'admin';
   const isGuru  = currentRole === 'guru';
 
-  const filtered = allSubjects.filter(s =>
-    s.name.toLowerCase().includes(search) &&
-    (jenjang === '' || s.jenjang === jenjang)
-  );
+  // Untuk guru: ambil hanya subject_id yang ditugaskan ke dia (status aktif)
+const guruSubjectIds = isGuru
+  ? new Set(allPenugasan
+      .filter(p => p.teacher_uid === currentUid && p.status === 'aktif')
+      .map(p => p.subject_id))
+  : null;
+
+const rows = allSubjects.filter(s => {
+  if (isGuru && !guruSubjectIds.has(s.subject_id)) return false;
+  if (!s.name.toLowerCase().includes(search)) return false;
+  if (jenjang !== '' && s.jenjang !== jenjang) return false;
+  return true;
+});
 
   // Grup berdasarkan nama
   const groups = buildGroupedMapel(filtered);

@@ -477,25 +477,11 @@
     justify-content: center;
   }
 
-  /* Tombol Tambah Mapel & Tugaskan Guru: floating action button */
-  .btn-tambah {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 52px;
-    height: 52px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 50%;
-    z-index: 200;
-    font-size: 0;        /* sembunyikan teks, hanya icon */
-    box-shadow: 0 6px 20px rgba(26,58,42,0.40);
-  }
-
-  .btn-tambah svg {
-    width: 22px;
-    height: 22px;
-    margin: 0;
+  /* Sembunyikan tombol Tambah di toolbar saat mobile
+   (digantikan oleh FAB #fabTambahMapel & #fabTambahPenugasan) */
+  #btnTambahMapel,
+  #btnTambahPenugasan {
+    display: none !important;
   }
 }
 
