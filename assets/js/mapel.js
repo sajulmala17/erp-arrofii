@@ -411,7 +411,7 @@ function renderTabelPenugasan() {
     const aksiHtml = buildAksiPenugasan(p, role, false);
     return `
       <tr>
-        <td>${escHtml(namaGuru(p.teacher_uid))}</td>
+        <td>${escHtml(namaGuru(p.teacher_name))}</td>
         <td>${escHtml(namaMapel(p.subject_id))}</td>
         <td>${escHtml(namaKelas(p.class_id))}</td>
         <td>${escHtml(p.tahun_ajaran)}</td>
@@ -429,7 +429,7 @@ function renderTabelPenugasan() {
           ${namaGuru(p.teacher_uid).charAt(0).toUpperCase()}
         </div>
         <div class="penugasan-card-info">
-          <div class="penugasan-card-name">${escHtml(namaGuru(p.teacher_uid))}</div>
+          <div class="penugasan-card-name">${escHtml(namaGuru(p.teacher_name))}</div>
           <div class="penugasan-card-meta">${escHtml(namaMapel(p.subject_id))} · ${escHtml(namaKelas(p.class_id))}</div>
         </div>
         ${buildStatusBadge(p)}
