@@ -330,20 +330,28 @@
       <div class="modal-body">
         <div class="form-grid">
 
+          <!-- Guru — searchable select (diinisialisasi oleh JS) -->
           <div class="form-field full">
-            <label for="inputGuruPenugasan">Guru</label>
-            <select id="inputGuruPenugasan" class="form-control">
-              <option value="">-- Pilih Guru --</option>
+            <label>Guru</label>
+            <div id="ssGuruWrap" class="ss-wrap"></div>
+          </div>
+
+          <!-- Jenjang — dropdown dari tabel subjects -->
+          <div class="form-field full">
+            <label for="inputJenjangPenugasan">Jenjang</label>
+            <select id="inputJenjangPenugasan" class="form-control"
+                    onchange="onJenjangPenugasanChange()">
+              <option value="">-- Pilih Jenjang --</option>
             </select>
           </div>
 
+          <!-- Mata Pelajaran — searchable, difilter by jenjang -->
           <div class="form-field full">
-            <label for="inputMapelPenugasan">Mata Pelajaran</label>
-            <select id="inputMapelPenugasan" class="form-control">
-              <option value="">-- Pilih Mapel --</option>
-            </select>
+            <label>Mata Pelajaran</label>
+            <div id="ssMapelWrap" class="ss-wrap"></div>
           </div>
 
+          <!-- Kelas — difilter by jenjang -->
           <div class="form-field full">
             <label for="inputKelasPenugasan">Kelas</label>
             <select id="inputKelasPenugasan" class="form-control">

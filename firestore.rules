@@ -309,14 +309,20 @@ service cloud.firestore {
 
     // ----------------------------------------------------------
     // 9b. KOLEKSI: counters
-    // Digunakan untuk auto-increment id_mapel (MPL001, dst.)
-    // admin  → Full (read + write)
-    // lainnya → Read only (agar client bisa runTransaction)
+    // Digunakan untuk auto-increment:
+    //   counters/subjects          → id_mapel (MPL001, …)  — hanya admin
+    //   counters/penugasan_YYYY    → id_penugasan (SKTGS_…) — admin & TU
     // ----------------------------------------------------------
     match /counters/{counterId} {
-      allow read:   if isAuthenticated();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
+      allow read: if isAuthenticated();
+
+      // subjects counter: hanya admin
+      allow create: if isAdmin()
+                    || (hasRole(['admin','tu'])
+                        && counterId.matches('penugasan_[0-9]{4}'));
+      allow update: if isAdmin()
+                    || (hasRole(['admin','tu'])
+                        && counterId.matches('penugasan_[0-9]{4}'));
       allow delete: if isAdmin();
     }
 

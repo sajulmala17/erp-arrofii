@@ -482,24 +482,184 @@ function buildAksiPenugasan(p, role, isCard) {
 }
 
 // =============================================================
-//  POPULATE SELECTS
+//  AUTO-INCREMENT id_penugasan
+//  Format: SKTGS_YYYY_MM001  (reset per tahun, pisah dari mapel)
+//  Counter doc: counters/penugasan_YYYY
 // =============================================================
-function populateSubjectSelect() {
-  document.getElementById('inputMapelPenugasan').innerHTML =
-    '<option value="">-- Pilih Mapel --</option>' +
-    allSubjects.map(s => `<option value="${s.subject_id}">${escHtml(s.name)} (${s.jenjang})</option>`).join('');
+async function nextIdPenugasan() {
+  const now    = new Date();
+  const yyyy   = now.getFullYear();
+  const mm     = String(now.getMonth() + 1).padStart(2, '0');
+  const ctrKey = `penugasan_${yyyy}`;
+  const counterRef = doc(db, 'counters', ctrKey);
+  let newNum;
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef);
+    newNum = snap.exists() ? (snap.data().last_num || 0) + 1 : 1;
+    tx.set(counterRef, { last_num: newNum }, { merge: true });
+  });
+  return `SKTGS_${yyyy}_${mm}${String(newNum).padStart(3, '0')}`;
 }
 
-function populateClassSelect() {
-  document.getElementById('inputKelasPenugasan').innerHTML =
-    '<option value="">-- Pilih Kelas --</option>' +
-    allClasses.map(c => `<option value="${c.class_id}">${escHtml(c.name)}</option>`).join('');
+// =============================================================
+//  SEARCHABLE SELECT — lightweight custom component
+//  Usage: initSearchableSelect(wrapperId, items, placeholder, onSelect)
+//    items: [{ value, label }]
+//    onSelect(value) called when user picks an item
+// =============================================================
+const _ssState = {};   // keyed by wrapperId
+
+function initSearchableSelect(wrapperId, items, placeholder, onSelect) {
+  const wrap = document.getElementById(wrapperId);
+  if (!wrap) return;
+
+  _ssState[wrapperId] = { items, onSelect, value: '', open: false };
+
+  wrap.innerHTML = `
+    <div class="ss-box" id="${wrapperId}_box">
+      <input type="text" class="ss-input form-control" id="${wrapperId}_input"
+             placeholder="${escHtml(placeholder)}" autocomplete="off" />
+      <div class="ss-dropdown" id="${wrapperId}_drop" style="display:none"></div>
+    </div>`;
+
+  const input = document.getElementById(`${wrapperId}_input`);
+  const drop  = document.getElementById(`${wrapperId}_drop`);
+
+  input.addEventListener('focus', () => ssOpen(wrapperId));
+  input.addEventListener('input', () => ssFilter(wrapperId));
+
+  // Close on outside click
+  document.addEventListener('mousedown', (e) => {
+    if (!wrap.contains(e.target)) ssClose(wrapperId);
+  }, true);
 }
 
+function ssOpen(wrapperId) {
+  const state = _ssState[wrapperId];
+  if (!state) return;
+  state.open = true;
+  ssFilter(wrapperId);
+  document.getElementById(`${wrapperId}_drop`).style.display = '';
+}
+
+function ssClose(wrapperId) {
+  const state = _ssState[wrapperId];
+  if (!state) return;
+  state.open = false;
+  const drop = document.getElementById(`${wrapperId}_drop`);
+  if (drop) drop.style.display = 'none';
+  // Restore label if value is set
+  const input = document.getElementById(`${wrapperId}_input`);
+  if (input && state.value) {
+    const item = state.items.find(i => i.value === state.value);
+    if (item) input.value = item.label;
+  } else if (input && !state.value) {
+    input.value = '';
+  }
+}
+
+function ssFilter(wrapperId) {
+  const state = _ssState[wrapperId];
+  if (!state) return;
+  const input = document.getElementById(`${wrapperId}_input`);
+  const drop  = document.getElementById(`${wrapperId}_drop`);
+  if (!input || !drop) return;
+
+  const q = input.value.toLowerCase();
+  const filtered = state.items.filter(i => i.label.toLowerCase().includes(q));
+
+  if (filtered.length === 0) {
+    drop.innerHTML = `<div class="ss-empty">Tidak ada hasil</div>`;
+  } else {
+    drop.innerHTML = filtered.map(i => `
+      <div class="ss-item ${i.value === state.value ? 'selected' : ''}"
+           data-value="${escHtml(i.value)}"
+           onmousedown="event.preventDefault();ssSelect('${wrapperId}','${escHtml(i.value)}')"
+      >${escHtml(i.label)}</div>`).join('');
+  }
+  drop.style.display = '';
+}
+
+window.ssSelect = function(wrapperId, value) {
+  const state = _ssState[wrapperId];
+  if (!state) return;
+  state.value = value;
+  const item  = state.items.find(i => i.value === value);
+  const input = document.getElementById(`${wrapperId}_input`);
+  if (input && item) input.value = item.label;
+  ssClose(wrapperId);
+  if (state.onSelect) state.onSelect(value);
+};
+
+function ssSetValue(wrapperId, value) {
+  const state = _ssState[wrapperId];
+  if (!state) return;
+  state.value = value;
+  const item  = state.items.find(i => i.value === value);
+  const input = document.getElementById(`${wrapperId}_input`);
+  if (input) input.value = item ? item.label : '';
+}
+
+function ssGetValue(wrapperId) {
+  return _ssState[wrapperId]?.value ?? '';
+}
+
+function ssUpdateItems(wrapperId, items) {
+  const state = _ssState[wrapperId];
+  if (!state) return;
+  state.items = items;
+  // Reset selection if current value no longer in items
+  if (state.value && !items.find(i => i.value === state.value)) {
+    state.value = '';
+    const input = document.getElementById(`${wrapperId}_input`);
+    if (input) input.value = '';
+  }
+}
+
+// =============================================================
+//  POPULATE SELECTS (Penugasan modal)
+// =============================================================
+
+// Jenjang dropdown — unique values from allSubjects
+function populateJenjangPenugasanSelect() {
+  const jenjangSet = [...new Set(allSubjects.map(s => s.jenjang).filter(Boolean))].sort();
+  const sel = document.getElementById('inputJenjangPenugasan');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- Pilih Jenjang --</option>' +
+    jenjangSet.map(j => `<option value="${j}">${escHtml(j)}</option>`).join('');
+}
+
+// Mapel — filtered by jenjang, searchable
+function populateSubjectSelect(jenjangFilter = '') {
+  const items = allSubjects
+    .filter(s => !jenjangFilter || s.jenjang === jenjangFilter)
+    .map(s => ({ value: s.subject_id, label: `${s.name} (${s.jenjang})` }));
+  if (_ssState['ssMapelWrap']) {
+    ssUpdateItems('ssMapelWrap', items);
+  } else {
+    initSearchableSelect('ssMapelWrap', items, '-- Cari Mapel --', () => {});
+  }
+}
+
+// Kelas — filtered by jenjang
+function populateClassSelect(jenjangFilter = '') {
+  const filtered = jenjangFilter
+    ? allClasses.filter(c => c.jenjang === jenjangFilter)
+    : allClasses;
+  const sel = document.getElementById('inputKelasPenugasan');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- Pilih Kelas --</option>' +
+    filtered.map(c => `<option value="${c.class_id}">${escHtml(c.name)}</option>`).join('');
+}
+
+// Guru — searchable
 function populateTeacherSelect() {
-  document.getElementById('inputGuruPenugasan').innerHTML =
-    '<option value="">-- Pilih Guru --</option>' +
-    allTeachers.map(t => `<option value="${t.uid}">${escHtml(t.name)}</option>`).join('');
+  const items = allTeachers.map(t => ({ value: t.uid, label: t.name }));
+  if (_ssState['ssGuruWrap']) {
+    ssUpdateItems('ssGuruWrap', items);
+  } else {
+    initSearchableSelect('ssGuruWrap', items, '-- Cari Guru --', () => {});
+  }
 }
 
 function collectTahunAjaran() {
@@ -773,38 +933,82 @@ window.hapusMapel = async function(subject_id) {
 // =============================================================
 //  PENUGASAN — CRUD
 // =============================================================
+
+// Called when jenjang dropdown changes in modal penugasan
+window.onJenjangPenugasanChange = function() {
+  const jenjang = document.getElementById('inputJenjangPenugasan')?.value ?? '';
+  populateSubjectSelect(jenjang);
+  populateClassSelect(jenjang);
+  // Reset selections
+  ssSetValue('ssMapelWrap', '');
+  const kelasSel = document.getElementById('inputKelasPenugasan');
+  if (kelasSel) kelasSel.value = '';
+};
+
 window.openEditPenugasan = function(doc_id) {
   editPenugasanId = doc_id;
+
+  // Ensure searchable selects are initialized
+  populateTeacherSelect();
+  populateJenjangPenugasanSelect();
+
   if (doc_id) {
     const p = allPenugasan.find(x => x.doc_id === doc_id);
     if (!p) return;
-    document.getElementById('modalPenugasanTitle').textContent     = 'Edit Penugasan';
-    document.getElementById('inputGuruPenugasan').value            = p.teacher_uid;
-    document.getElementById('inputMapelPenugasan').value           = p.subject_id;
-    document.getElementById('inputKelasPenugasan').value           = p.class_id;
-    document.getElementById('inputTahunAjaranPenugasan').value     = p.tahun_ajaran;
-    document.getElementById('inputSemesterPenugasan').value        = p.semester;
+    document.getElementById('modalPenugasanTitle').textContent = 'Edit Penugasan';
+
+    // Set guru
+    ssSetValue('ssGuruWrap', p.teacher_uid);
+
+    // Set jenjang (derive from subject)
+    const subjectJenjang = jenjangMapel(p.subject_id);
+    const jenjangSel = document.getElementById('inputJenjangPenugasan');
+    if (jenjangSel) jenjangSel.value = subjectJenjang;
+
+    // Populate mapel & kelas filtered by jenjang, then set values
+    populateSubjectSelect(subjectJenjang);
+    populateClassSelect(subjectJenjang);
+    ssSetValue('ssMapelWrap', p.subject_id);
+
+    const kelasSel = document.getElementById('inputKelasPenugasan');
+    if (kelasSel) kelasSel.value = p.class_id;
+
+    document.getElementById('inputTahunAjaranPenugasan').value = p.tahun_ajaran;
+    document.getElementById('inputSemesterPenugasan').value    = p.semester;
   } else {
-    document.getElementById('modalPenugasanTitle').textContent     = 'Tugaskan Guru';
-    document.getElementById('inputGuruPenugasan').value            = '';
-    document.getElementById('inputMapelPenugasan').value           = '';
-    document.getElementById('inputKelasPenugasan').value           = '';
-    document.getElementById('inputTahunAjaranPenugasan').value     = '';
-    document.getElementById('inputSemesterPenugasan').value        = '1';
+    document.getElementById('modalPenugasanTitle').textContent = 'Tugaskan Guru';
+
+    ssSetValue('ssGuruWrap', '');
+    ssSetValue('ssMapelWrap', '');
+
+    const jenjangSel = document.getElementById('inputJenjangPenugasan');
+    if (jenjangSel) jenjangSel.value = '';
+
+    populateSubjectSelect('');
+    populateClassSelect('');
+
+    const kelasSel = document.getElementById('inputKelasPenugasan');
+    if (kelasSel) kelasSel.value = '';
+
+    document.getElementById('inputTahunAjaranPenugasan').value = '';
+    document.getElementById('inputSemesterPenugasan').value    = '1';
   }
   openModal('modalPenugasan');
 };
 
 async function submitPenugasan() {
-  const teacher_uid  = document.getElementById('inputGuruPenugasan').value;
-  const subject_id   = document.getElementById('inputMapelPenugasan').value;
-  const class_id     = document.getElementById('inputKelasPenugasan').value;
+  const teacher_uid  = ssGetValue('ssGuruWrap');
+  const subject_id   = ssGetValue('ssMapelWrap');
+  const class_id     = document.getElementById('inputKelasPenugasan')?.value ?? '';
+  const jenjang      = document.getElementById('inputJenjangPenugasan')?.value ?? '';
   const tahun_ajaran = document.getElementById('inputTahunAjaranPenugasan').value.trim();
   const semester     = document.getElementById('inputSemesterPenugasan').value;
 
-  if (!teacher_uid || !subject_id || !class_id || !tahun_ajaran) {
-    showToast('Semua field wajib diisi.', 'error'); return;
-  }
+  if (!teacher_uid) { showToast('Pilih guru terlebih dahulu.', 'error'); return; }
+  if (!jenjang)     { showToast('Pilih jenjang terlebih dahulu.', 'error'); return; }
+  if (!subject_id)  { showToast('Pilih mata pelajaran.', 'error'); return; }
+  if (!class_id)    { showToast('Pilih kelas.', 'error'); return; }
+  if (!tahun_ajaran) { showToast('Isi tahun ajaran.', 'error'); return; }
   if (!/^\d{4}\/\d{4}$/.test(tahun_ajaran)) {
     showToast('Format tahun ajaran: 2025/2026', 'error'); return;
   }
@@ -815,16 +1019,17 @@ async function submitPenugasan() {
   try {
     if (editPenugasanId) {
       await updateDoc(doc(db, 'teacher_subjects', editPenugasanId), {
-        teacher_uid, subject_id, class_id, tahun_ajaran, semester,
+        teacher_uid, subject_id, class_id, jenjang, tahun_ajaran, semester,
         status: 'menunggu_approval',
         approved_by: null, catatan: null,
         updated_at: serverTimestamp(),
       });
       showToast('Penugasan diperbarui & diajukan ulang.', 'success');
     } else {
+      const id_penugasan = await nextIdPenugasan();
       await addDoc(collection(db, 'teacher_subjects'), {
-        teacher_uid, subject_id, class_id, tahun_ajaran, semester,
-        status,
+        id_penugasan, teacher_uid, subject_id, class_id, jenjang,
+        tahun_ajaran, semester, status,
         created_by: currentUid,
         approved_by: null, catatan: null,
         created_at: serverTimestamp(),
