@@ -19,6 +19,7 @@ import { getFirestore,
          query,
          where,
          orderBy,
+         runTransaction,
          serverTimestamp }         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const db = getFirestore();
@@ -83,9 +84,9 @@ function applyRoleUI() {
   const isKepsek = currentRole === 'kepsek';
   const isGuru   = currentRole === 'guru';
 
-  // Tab Master — tombol tambah hanya admin
+  // Tab Master — tombol tambah hanya admin; kolom Aksi untuk admin & guru
   document.getElementById('btnTambahMapel').style.display = isAdmin ? 'flex' : 'none';
-  document.getElementById('thAksiMapel').style.display    = isAdmin ? '' : 'none';
+  document.getElementById('thAksiMapel').style.display    = (isAdmin || isGuru) ? '' : 'none';
 
   // Tab Penugasan — toolbar kanan hanya admin & TU
   document.getElementById('toolbarPenugasanRight').style.display = (isAdmin || isTU) ? '' : 'none';
@@ -210,31 +211,65 @@ function escHtml(str)      { return String(str ?? '').replace(/&/g,'&amp;').repl
 function svgIcon(name)     { return `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${getIcon(name)}</svg>`; }
 
 // =============================================================
-//  RENDER TABEL MASTER MAPEL (desktop)
+//  AUTO-INCREMENT id_mapel  (format MPL001, MPL002, …)
+//  Menggunakan Firestore transaction pada doc counters/subjects
 // =============================================================
+async function nextIdMapel() {
+  const counterRef = doc(db, 'counters', 'subjects');
+  let newNum;
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef);
+    newNum = snap.exists() ? (snap.data().last_num || 0) + 1 : 1;
+    tx.set(counterRef, { last_num: newNum }, { merge: true });
+  });
+  return 'MPL' + String(newNum).padStart(3, '0');
+}
+
+// =============================================================
+//  RENDER TABEL MASTER MAPEL (desktop)
+//  Baris dengan nama mapel yang sama digabung:
+//    Jenjang → "SMP / SMA"   KKM → "75 / 81"
+// =============================================================
+function buildGroupedMapel(subjects) {
+  // Kelompokkan berdasarkan nama (case-insensitive)
+  const map = new Map();
+  for (const s of subjects) {
+    const key = s.name.trim().toLowerCase();
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(s);
+  }
+  // Kembalikan array grup; tiap grup diurutkan SMP dulu
+  const order = ['SMP', 'SMA'];
+  return [...map.values()].map(grp => {
+    grp.sort((a, b) => order.indexOf(a.jenjang) - order.indexOf(b.jenjang));
+    return grp;
+  });
+}
+
 function renderTabelMapel() {
   const search  = document.getElementById('searchMapel').value.toLowerCase();
   const jenjang = document.getElementById('filterJenjangMapel').value;
   const isAdmin = currentRole === 'admin';
   const isGuru  = currentRole === 'guru';
 
-  const rows = allSubjects.filter(s =>
+  const filtered = allSubjects.filter(s =>
     s.name.toLowerCase().includes(search) &&
     (jenjang === '' || s.jenjang === jenjang)
   );
 
-  // Pagination
-  const totalMapel = rows.length;
-  const totalPageMapel = Math.ceil(totalMapel / PAGE_SIZE);
+  // Grup berdasarkan nama
+  const groups = buildGroupedMapel(filtered);
+
+  // Pagination berdasarkan jumlah grup
+  const totalPageMapel = Math.ceil(groups.length / PAGE_SIZE);
   if (pageMapel > totalPageMapel) pageMapel = 1;
   const start = (pageMapel - 1) * PAGE_SIZE;
-  const end   = start + PAGE_SIZE;
-  const rowsHalIni = rows.slice(start, end);
+  const groupsHalIni = groups.slice(start, start + PAGE_SIZE);
 
   const colspan = isAdmin ? 4 : 3;
   const tbody   = document.getElementById('tbodyMapel');
 
-  if (rows.length === 0) {
+  if (groups.length === 0) {
     tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-cell">Tidak ada data.</td></tr>`;
     document.getElementById('cardListMapel').innerHTML =
       `<div style="text-align:center;padding:32px;color:var(--text-soft)">Tidak ada data.</div>`;
@@ -242,63 +277,76 @@ function renderTabelMapel() {
     return;
   }
 
-  tbody.innerHTML = rowsHalIni.map(s => {
-    // Cek apakah mapel ini ditugaskan ke guru yang login
-    const ditugaskan = allPenugasan.some(p =>
-      p.subject_id === s.subject_id &&
-      p.teacher_uid === currentUid &&
-      p.status === 'aktif'
-    );
+  tbody.innerHTML = groupsHalIni.map(grp => {
+    const firstName = grp[0].name;
+    const jenjangVal = grp.map(s => escHtml(s.jenjang)).join(' / ');
+    const kkmVal     = grp.map(s => s.kkm).join(' / ');
 
-    // Tombol Edit KKM hanya untuk guru yang ditugaskan
-    const aksiGuru = (isGuru && ditugaskan)
-      ? `<button class="btn-aksi edit" onclick="openEditKKM('${s.subject_id}', ${s.kkm})" title="Edit KKM">KKM</button>`
-      : '';
+    // Aksi: admin edit/hapus tiap entri; guru edit KKM jika ditugaskan
+    let aksiHtml = '';
+    if (isAdmin) {
+      aksiHtml = grp.map(s => `
+        <button class="btn-aksi edit"  title="Edit ${s.jenjang}"  onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')} ${escHtml(s.jenjang)}</button>
+        <button class="btn-aksi hapus" title="Hapus ${s.jenjang}" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
+      `).join('');
+    } else if (isGuru) {
+      aksiHtml = grp.map(s => {
+        const ditugaskan = allPenugasan.some(p =>
+          p.subject_id === s.subject_id &&
+          p.teacher_uid === currentUid &&
+          p.status === 'aktif'
+        );
+        return ditugaskan
+          ? `<button class="btn-aksi edit" onclick="openEditKKM('${s.subject_id}', ${s.kkm})" title="Edit KKM ${s.jenjang}">KKM ${escHtml(s.jenjang)}</button>`
+          : '';
+      }).join('');
+    }
 
     return `
     <tr>
-      <td>${escHtml(s.name)}</td>
-      <td>${escHtml(s.jenjang)}</td>
-      <td>${s.kkm}</td>
-      <td>
-        <div class="aksi-wrap">
-          ${isAdmin ? `
-            <button class="btn-aksi edit"  title="Edit" onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')}</button>
-            <button class="btn-aksi hapus" title="Hapus" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
-          ` : ''}
-          ${aksiGuru}
-        </div>
-      </td>
+      <td>${escHtml(firstName)}</td>
+      <td>${jenjangVal}</td>
+      <td>${kkmVal}</td>
+      <td><div class="aksi-wrap">${aksiHtml}</div></td>
     </tr>`;
   }).join('');
 
   // Mobile cards
-  document.getElementById('cardListMapel').innerHTML = rowsHalIni.map(s => {
-    const ditugaskan = allPenugasan.some(p =>
-      p.subject_id === s.subject_id &&
-      p.teacher_uid === currentUid &&
-      p.status === 'aktif'
-    );
+  document.getElementById('cardListMapel').innerHTML = groupsHalIni.map(grp => {
+    const firstName  = grp[0].name;
+    const jenjangVal = grp.map(s => escHtml(s.jenjang)).join(' / ');
+    const kkmVal     = grp.map(s => s.kkm).join(' / ');
 
-    const aksiGuru = (isGuru && ditugaskan)
-      ? `<button class="btn-aksi edit" onclick="openEditKKM('${s.subject_id}', ${s.kkm})" title="Edit KKM">KKM</button>`
-      : '';
+    let aksiHtml = '';
+    if (isAdmin) {
+      aksiHtml = grp.map(s => `
+        <button class="btn-aksi edit"  title="Edit ${s.jenjang}"  onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')} ${escHtml(s.jenjang)}</button>
+        <button class="btn-aksi hapus" title="Hapus ${s.jenjang}" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
+      `).join('');
+    } else if (isGuru) {
+      aksiHtml = grp.map(s => {
+        const ditugaskan = allPenugasan.some(p =>
+          p.subject_id === s.subject_id &&
+          p.teacher_uid === currentUid &&
+          p.status === 'aktif'
+        );
+        return ditugaskan
+          ? `<button class="btn-aksi edit" onclick="openEditKKM('${s.subject_id}', ${s.kkm})" title="Edit KKM ${s.jenjang}">KKM ${escHtml(s.jenjang)}</button>`
+          : '';
+      }).join('');
+    }
 
     return `
     <div class="mapel-card">
       <div class="mapel-card-head">
         <div class="mapel-card-icon">${svgIcon('book')}</div>
         <div class="mapel-card-info">
-          <div class="mapel-card-name">${escHtml(s.name)}</div>
-          <div class="mapel-card-meta">${escHtml(s.jenjang)} · KKM ${s.kkm}</div>
+          <div class="mapel-card-name">${escHtml(firstName)}</div>
+          <div class="mapel-card-meta">${jenjangVal} · KKM ${kkmVal}</div>
         </div>
       </div>
       <div class="mapel-card-foot">
-        ${isAdmin ? `
-          <button class="btn-aksi edit"  title="Edit" onclick="openEditMapel('${s.subject_id}')">${svgIcon('edit')}</button>
-          <button class="btn-aksi hapus" title="Hapus" onclick="hapusMapel('${s.subject_id}')">${svgIcon('delete')}</button>
-        ` : ''}
-        ${aksiGuru}
+        <div class="aksi-wrap">${aksiHtml}</div>
       </div>
     </div>`;
   }).join('');
@@ -566,40 +614,139 @@ window.goToPagePenugasan = function(hal) {
 // =============================================================
 //  MASTER MAPEL — CRUD
 // =============================================================
+
+// Render dynamic KKM fields based on checked jenjang checkboxes
+function renderKKMFields() {
+  const cbSMP = document.getElementById('cbJenjangSMP');
+  const cbSMA = document.getElementById('cbJenjangSMA');
+  const wrap  = document.getElementById('kkmFieldsWrap');
+  const rows  = [];
+  if (cbSMP && cbSMP.checked) {
+    rows.push(`
+      <div class="form-field">
+        <label for="inputKKM_SMP">KKM SMP</label>
+        <input type="number" id="inputKKM_SMP" class="form-control"
+               placeholder="75" min="0" max="100" value="75" />
+      </div>`);
+  }
+  if (cbSMA && cbSMA.checked) {
+    rows.push(`
+      <div class="form-field">
+        <label for="inputKKM_SMA">KKM SMA</label>
+        <input type="number" id="inputKKM_SMA" class="form-control"
+               placeholder="75" min="0" max="100" value="75" />
+      </div>`);
+  }
+  if (wrap) wrap.innerHTML = rows.join('');
+}
+
+// editMapelId = null  → mode Tambah (bisa multi-jenjang)
+// editMapelId = string → mode Edit satu entri (jenjang sudah tetap)
 window.openEditMapel = function(subject_id) {
   editMapelId = subject_id;
-  if (subject_id) {
+
+  const isEdit = !!subject_id;
+  document.getElementById('modalMapelTitle').textContent =
+    isEdit ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran';
+
+  // Tampilkan/sembunyikan bagian jenjang checkbox vs label tetap
+  const jenjangCheckboxWrap = document.getElementById('jenjangCheckboxWrap');
+  const jenjangEditWrap     = document.getElementById('jenjangEditWrap');
+
+  if (isEdit) {
     const s = allSubjects.find(x => x.subject_id === subject_id);
     if (!s) return;
-    document.getElementById('modalMapelTitle').textContent = 'Edit Mata Pelajaran';
-    document.getElementById('inputNamaMapel').value    = s.name;
-    document.getElementById('inputJenjangMapel').value = s.jenjang;
-    document.getElementById('inputKKM').value          = s.kkm;
+
+    document.getElementById('inputNamaMapel').value = s.name;
+
+    // Mode edit: tampilkan label jenjang (tidak bisa diubah dari sini)
+    if (jenjangCheckboxWrap) jenjangCheckboxWrap.style.display = 'none';
+    if (jenjangEditWrap)     jenjangEditWrap.style.display     = '';
+    const jenjangLabel = document.getElementById('jenjangEditLabel');
+    if (jenjangLabel) jenjangLabel.textContent = s.jenjang;
+
+    // Satu field KKM
+    const wrap = document.getElementById('kkmFieldsWrap');
+    if (wrap) wrap.innerHTML = `
+      <div class="form-field">
+        <label for="inputKKM_EDIT">KKM</label>
+        <input type="number" id="inputKKM_EDIT" class="form-control"
+               placeholder="75" min="0" max="100" value="${s.kkm}" />
+      </div>`;
   } else {
-    document.getElementById('modalMapelTitle').textContent = 'Tambah Mata Pelajaran';
-    document.getElementById('inputNamaMapel').value    = '';
-    document.getElementById('inputJenjangMapel').value = 'SMP';
-    document.getElementById('inputKKM').value          = '75';
+    document.getElementById('inputNamaMapel').value = '';
+
+    // Mode tambah: tampilkan checkbox jenjang
+    if (jenjangCheckboxWrap) jenjangCheckboxWrap.style.display = '';
+    if (jenjangEditWrap)     jenjangEditWrap.style.display     = 'none';
+
+    // Reset checkboxes
+    const cbSMP = document.getElementById('cbJenjangSMP');
+    const cbSMA = document.getElementById('cbJenjangSMA');
+    if (cbSMP) cbSMP.checked = true;
+    if (cbSMA) cbSMA.checked = false;
+    renderKKMFields();
   }
+
   openModal('modalMapel');
 };
 
-async function submitMapel() {
-  const name    = document.getElementById('inputNamaMapel').value.trim();
-  const jenjang = document.getElementById('inputJenjangMapel').value;
-  const kkm     = parseInt(document.getElementById('inputKKM').value, 10);
+// Expose renderKKMFields so checkbox onchange can call it
+window.renderKKMFields = renderKKMFields;
 
+async function submitMapel() {
+  const name = document.getElementById('inputNamaMapel').value.trim();
   if (!name) { showToast('Nama mapel tidak boleh kosong.', 'error'); return; }
-  if (isNaN(kkm) || kkm < 0 || kkm > 100) { showToast('KKM harus antara 0–100.', 'error'); return; }
 
   setBtnLoading('btnSubmitMapel', true);
   try {
     if (editMapelId) {
+      // ── MODE EDIT: update satu dokumen ──
+      const kkmEl = document.getElementById('inputKKM_EDIT');
+      const kkm   = parseInt(kkmEl?.value ?? '0', 10);
+      if (isNaN(kkm) || kkm < 0 || kkm > 100) {
+        showToast('KKM harus antara 0–100.', 'error'); return;
+      }
+      // Ambil jenjang dari label (tidak berubah saat edit)
+      const jenjangLabel = document.getElementById('jenjangEditLabel');
+      const jenjang = jenjangLabel ? jenjangLabel.textContent.trim() : '';
       await updateDoc(doc(db, 'subjects', editMapelId), { name, jenjang, kkm });
       showToast('Mata pelajaran berhasil diperbarui.', 'success');
     } else {
-      await addDoc(collection(db, 'subjects'), { name, jenjang, kkm });
-      showToast('Mata pelajaran berhasil ditambahkan.', 'success');
+      // ── MODE TAMBAH: buat satu dokumen per jenjang yang dicentang ──
+      const cbSMP = document.getElementById('cbJenjangSMP');
+      const cbSMA = document.getElementById('cbJenjangSMA');
+      const entries = [];
+      if (cbSMP?.checked) {
+        const kkm = parseInt(document.getElementById('inputKKM_SMP')?.value ?? '0', 10);
+        if (isNaN(kkm) || kkm < 0 || kkm > 100) {
+          showToast('KKM SMP harus antara 0–100.', 'error'); return;
+        }
+        entries.push({ jenjang: 'SMP', kkm });
+      }
+      if (cbSMA?.checked) {
+        const kkm = parseInt(document.getElementById('inputKKM_SMA')?.value ?? '0', 10);
+        if (isNaN(kkm) || kkm < 0 || kkm > 100) {
+          showToast('KKM SMA harus antara 0–100.', 'error'); return;
+        }
+        entries.push({ jenjang: 'SMA', kkm });
+      }
+      if (entries.length === 0) {
+        showToast('Pilih minimal satu jenjang.', 'error'); return;
+      }
+
+      // Buat dokumen per jenjang, masing-masing dengan id_mapel unik
+      await Promise.all(entries.map(async ({ jenjang, kkm }) => {
+        const id_mapel = await nextIdMapel();
+        await addDoc(collection(db, 'subjects'), { id_mapel, name, jenjang, kkm });
+      }));
+
+      showToast(
+        entries.length > 1
+          ? `${entries.length} mata pelajaran berhasil ditambahkan.`
+          : 'Mata pelajaran berhasil ditambahkan.',
+        'success'
+      );
     }
     closeModal('modalMapel');
     await loadSubjects();

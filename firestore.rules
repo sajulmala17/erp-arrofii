@@ -308,6 +308,19 @@ service cloud.firestore {
     }
 
     // ----------------------------------------------------------
+    // 9b. KOLEKSI: counters
+    // Digunakan untuk auto-increment id_mapel (MPL001, dst.)
+    // admin  → Full (read + write)
+    // lainnya → Read only (agar client bisa runTransaction)
+    // ----------------------------------------------------------
+    match /counters/{counterId} {
+      allow read:   if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ----------------------------------------------------------
     // 9. KOLEKSI: letter_counters
     // admin  → Full
     // kepsek → Read

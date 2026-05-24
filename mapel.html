@@ -281,18 +281,32 @@
                    placeholder="cth. Matematika" autocomplete="off" />
           </div>
 
-          <div class="form-field">
-            <label for="inputJenjangMapel">Jenjang</label>
-            <select id="inputJenjangMapel" class="form-control">
-              <option value="SMP">SMP</option>
-              <option value="SMA">SMA</option>
-            </select>
+          <!-- Mode Tambah: checkbox jenjang (bisa pilih lebih dari satu) -->
+          <div class="form-field full" id="jenjangCheckboxWrap">
+            <label>Jenjang</label>
+            <div class="jenjang-checkbox-group">
+              <label class="jenjang-cb-label">
+                <input type="checkbox" id="cbJenjangSMP" value="SMP"
+                       checked onchange="renderKKMFields()" />
+                <span>SMP</span>
+              </label>
+              <label class="jenjang-cb-label">
+                <input type="checkbox" id="cbJenjangSMA" value="SMA"
+                       onchange="renderKKMFields()" />
+                <span>SMA</span>
+              </label>
+            </div>
           </div>
 
-          <div class="form-field">
-            <label for="inputKKM">KKM</label>
-            <input type="number" id="inputKKM" class="form-control"
-                   placeholder="75" min="0" max="100" />
+          <!-- Mode Edit: label jenjang tetap (tidak bisa diubah) -->
+          <div class="form-field" id="jenjangEditWrap" style="display:none">
+            <label>Jenjang</label>
+            <div class="form-control jenjang-edit-badge" id="jenjangEditLabel">SMP</div>
+          </div>
+
+          <!-- KKM fields — dirender dinamis oleh renderKKMFields() -->
+          <div id="kkmFieldsWrap" class="form-field full" style="display:contents">
+            <!-- diisi oleh JS -->
           </div>
 
         </div>
