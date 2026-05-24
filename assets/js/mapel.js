@@ -275,7 +275,7 @@ const rows = allSubjects.filter(s => {
 });
 
   // Grup berdasarkan nama
-  const groups = buildGroupedMapel(filtered);
+  const groups = buildGroupedMapel(rows);
 
   // Pagination berdasarkan jumlah grup
   const totalPageMapel = Math.ceil(groups.length / PAGE_SIZE);

@@ -61,7 +61,7 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if isAdmin()
                   || isKepsek()
-                  || (isGuru()   && isSelf(uid))
+                  || isGuru()
                   || (isTU()     && isSelf(uid))
                   || (isOrtu()   && isSelf(uid));
 
