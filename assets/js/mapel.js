@@ -88,8 +88,16 @@ function applyRoleUI() {
   document.getElementById('btnTambahMapel').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('thAksiMapel').style.display    = (isAdmin || isGuru) ? '' : 'none';
 
+  // FAB mobile — Tambah Mapel (hanya admin, hanya tampil di tab master)
+  const fabMapel = document.getElementById('fabTambahMapel');
+  if (fabMapel) fabMapel.style.display = isAdmin ? 'flex' : 'none';
+
   // Tab Penugasan — toolbar kanan hanya admin & TU
   document.getElementById('toolbarPenugasanRight').style.display = (isAdmin || isTU) ? '' : 'none';
+
+  // FAB mobile — Tugaskan Guru (hanya admin & TU, tersembunyi sampai tab penugasan aktif)
+  const fabPenugasan = document.getElementById('fabTambahPenugasan');
+  if (fabPenugasan) fabPenugasan.style.display = 'none'; // ditampilkan saat switchTab('penugasan')
 
   // Pending banner — hanya kepsek
   if (isKepsek) document.getElementById('pendingBanner').style.display = '';
@@ -701,6 +709,12 @@ function bindEvents() {
     })
   );
 
+  // FAB mobile — wire click handlers
+  const fabMapel = document.getElementById('fabTambahMapel');
+  if (fabMapel) fabMapel.addEventListener('click', () => openEditMapel(null));
+  const fabPenugasan = document.getElementById('fabTambahPenugasan');
+  if (fabPenugasan) fabPenugasan.addEventListener('click', () => openEditPenugasan(null));
+
   // Modal Mapel
   document.getElementById('btnTambahMapel').addEventListener('click', () => openEditMapel(null));
   document.getElementById('btnCloseModalMapel').addEventListener('click', () => closeModal('modalMapel'));
@@ -744,6 +758,14 @@ function switchTab(tab) {
   document.querySelectorAll('.mapel-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.getElementById('panelMaster').classList.toggle('active',    tab === 'master');
   document.getElementById('panelPenugasan').classList.toggle('active', tab === 'penugasan');
+
+  // FAB: tampilkan FAB yang sesuai dengan tab aktif
+  const isAdmin = currentRole === 'admin';
+  const isTU    = currentRole === 'tu';
+  const fabMapel     = document.getElementById('fabTambahMapel');
+  const fabPenugasan = document.getElementById('fabTambahPenugasan');
+  if (fabMapel)     fabMapel.style.display     = (tab === 'master'    && isAdmin)          ? 'flex' : 'none';
+  if (fabPenugasan) fabPenugasan.style.display = (tab === 'penugasan' && (isAdmin || isTU)) ? 'flex' : 'none';
 }
 
 // =============================================================

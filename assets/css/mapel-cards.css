@@ -67,31 +67,36 @@
 @media (max-width: 767px) {
   .card-list       { display: flex; }
   .table-container { display: none; }
-
-  /* Floating Action Button */
-  #btnTambahMapel,
-  #btnTambahPenugasan {
-    position: fixed !important;
-    bottom: 24px !important;
-    right: 24px !important;
-    width: 52px !important;
-    height: 52px !important;
-    padding: 0 !important;
-    justify-content: center !important;
-    border-radius: 50% !important;
-    z-index: 200 !important;
-    font-size: 0 !important;
-    box-shadow: 0 6px 20px rgba(26,58,42,0.40) !important;
-  }
-
-  #btnTambahMapel svg,
-  #btnTambahPenugasan svg {
-    width: 22px !important;
-    height: 22px !important;
-    margin: 0 !important;
-  }
-
   .btn-salin { width: 100%; justify-content: center; }
+}
+
+/* ============================================================
+   FLOATING ACTION BUTTON — selalu fixed, hanya tampil di mobile
+============================================================ */
+.btn-fab {
+  display: none; /* disembunyikan di desktop */
+}
+
+@media (max-width: 767px) {
+  .btn-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    z-index: 300;
+    font-size: 0;
+    box-shadow: 0 6px 20px rgba(26,58,42,0.40);
+  }
+
+  .btn-fab svg {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+  }
 }
 
 /* ============================================================
@@ -134,9 +139,8 @@
   font-size: 14.5px;
   font-weight: 700;
   color: var(--text-dark);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .mapel-card-meta {
