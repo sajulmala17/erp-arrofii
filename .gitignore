@@ -74,5 +74,8 @@ node_modules/
 .dataconnect
 
 #md projek
-instruksi.md
-instruksi.html
+*.md
+docs/
+
+# kecualikan readme
+!readme.md
