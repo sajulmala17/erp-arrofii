@@ -74,6 +74,8 @@ node_modules/
 .dataconnect
 
 #md projek
+.opencode/
+.codegraph/
 *.md
 docs/
 
