@@ -113,6 +113,10 @@ function applyRoleUI() {
       const span = tabPenugasan.querySelector('span');
       if (span) span.textContent = 'Penugasan Saya';
     }
+
+    // Sembunyikan kolom Guru di tabel penugasan
+    const thGuru = document.getElementById('thGuruPenugasan');
+    if (thGuru) thGuru.style.display = 'none';
   }
 }
 
@@ -124,6 +128,7 @@ async function loadAllData() {
   showMapelLoading();
   await Promise.all([loadSubjects(), loadClasses(), loadTeachers()]);
   await loadPenugasan();
+  renderTabelMapel();
 }
 
 async function loadSubjects() {
@@ -200,8 +205,9 @@ function showMapelLoading() {
 }
 
 function showPenugasanLoading() {
+  const colspan = currentRole === 'guru' ? 6 : 7;
   document.getElementById('tbodyPenugasan').innerHTML =
-    `<tr><td colspan="7" class="empty-cell">
+    `<tr><td colspan="${colspan}" class="empty-cell">
       <div class="loading-dots"><span></span><span></span><span></span></div>
     </td></tr>`;
   document.getElementById('cardListPenugasan').innerHTML =
@@ -400,7 +406,8 @@ function renderTabelPenugasan() {
   const tbody = document.getElementById('tbodyPenugasan');
 
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">Tidak ada data.</td></tr>`;
+    const colsp = role === 'guru' ? 6 : 7;
+    tbody.innerHTML = `<tr><td colspan="${colsp}" class="empty-cell">Tidak ada data.</td></tr>`;
     document.getElementById('cardListPenugasan').innerHTML =
       `<div style="text-align:center;padding:32px;color:var(--text-soft)">Tidak ada data.</div>`;
     document.getElementById('paginasiPenugasan').innerHTML = '';
@@ -409,9 +416,10 @@ function renderTabelPenugasan() {
 
   tbody.innerHTML = rowsHalIni.map(p => {
     const aksiHtml = buildAksiPenugasan(p, role, false);
+    const guruTd = role === 'guru' ? '' : `<td>${escHtml(namaGuru(p.teacher_uid))}</td>`;
     return `
       <tr>
-        <td>${escHtml(namaGuru(p.teacher_uid))}</td>
+        ${guruTd}
         <td>${escHtml(namaMapel(p.subject_id))}</td>
         <td>${escHtml(namaKelas(p.class_id))}</td>
         <td>${escHtml(p.tahun_ajaran)}</td>
@@ -425,11 +433,12 @@ function renderTabelPenugasan() {
   document.getElementById('cardListPenugasan').innerHTML = rowsHalIni.map(p => `
     <div class="penugasan-card">
       <div class="penugasan-card-head">
+        ${role !== 'guru' ? `
         <div class="penugasan-card-avatar">
           ${namaGuru(p.teacher_uid).charAt(0).toUpperCase()}
-        </div>
+        </div>` : ''}
         <div class="penugasan-card-info">
-          <div class="penugasan-card-name">${escHtml(namaGuru(p.teacher_uid))}</div>
+          ${role !== 'guru' ? `<div class="penugasan-card-name">${escHtml(namaGuru(p.teacher_uid))}</div>` : ''}
           <div class="penugasan-card-meta">${escHtml(namaMapel(p.subject_id))} · ${escHtml(namaKelas(p.class_id))}</div>
         </div>
         ${buildStatusBadge(p)}
