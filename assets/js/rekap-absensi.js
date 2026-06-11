@@ -37,6 +37,7 @@ let currentRole = '';
 let currentUid  = '';
 let allKelas    = [];
 let allGuru     = [];
+let teacherSubjects = []; // untuk guru: daftar mapel+kelas yg diajar
 let activeTab   = 'siswa'; // 'siswa' | 'guru'
 
 // ============================================================
@@ -81,39 +82,119 @@ function statusBadge(status) {
 // LOAD: Data master kelas & guru
 // ============================================================
 async function loadMasterData() {
-  // Kelas
   const kelasSnap = await getDocs(
     query(collection(db, 'classes'), orderBy('name'))
   );
   allKelas = kelasSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  // Populate filter kelas
-  const selKelas = document.getElementById('filterKelasRekap');
-  if (selKelas) {
-    selKelas.innerHTML = '<option value="">Semua Kelas</option>' +
-      allKelas.map(k =>
-        `<option value="${k.id}">${k.name} (${k.jenjang})</option>`
-      ).join('');
-  }
+  if (currentRole === 'guru') {
+    // Load teacher_subjects untuk filter mapel & kelas
+    await loadTeacherSubjectsForRekap(currentUid);
 
-  // Guru (hanya untuk admin/kepsek/tu)
-  if (['admin', 'kepsek', 'tu'].includes(currentRole)) {
-    const guruSnap = await getDocs(
-      query(
-        collection(db, 'users'),
-        where('role', '==', 'guru'),
-        orderBy('name')
-      )
-    );
-    allGuru = guruSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const classIds = [...new Set(teacherSubjects.map(ts => ts.class_id))];
+    const filteredKelas = allKelas.filter(k => classIds.includes(k.id));
 
-    const selGuru = document.getElementById('filterGuru');
-    if (selGuru) {
-      selGuru.innerHTML = '<option value="">Semua Guru</option>' +
-        allGuru.map(g =>
-          `<option value="${g.uid || g.id}">${g.name}</option>`
+    const selKelas = document.getElementById('filterKelasRekap');
+    if (selKelas) {
+      selKelas.innerHTML = '<option value="">Semua Kelas</option>' +
+        filteredKelas.map(k =>
+          `<option value="${k.id}">${k.name} (${k.jenjang})</option>`
         ).join('');
     }
+
+    // Populate filter mapel (unique subjects)
+    const seen = new Set();
+    const mapelOptions = teacherSubjects.filter(ts => {
+      if (seen.has(ts.subject_id)) return false;
+      seen.add(ts.subject_id);
+      return true;
+    });
+    const selMapel = document.getElementById('filterMapelRekap');
+    if (selMapel) {
+      selMapel.innerHTML = '<option value="">Semua Mapel</option>' +
+        mapelOptions.map(ts =>
+          `<option value="${ts.subject_id}">${ts.subject_name}</option>`
+        ).join('');
+    }
+
+    document.getElementById('filterMapelWrap').style.display = '';
+  } else {
+    // Populate filter kelas — semua kelas
+    const selKelas = document.getElementById('filterKelasRekap');
+    if (selKelas) {
+      selKelas.innerHTML = '<option value="">Semua Kelas</option>' +
+        allKelas.map(k =>
+          `<option value="${k.id}">${k.name} (${k.jenjang})</option>`
+        ).join('');
+    }
+
+    // Guru (hanya untuk admin/kepsek/tu)
+    if (['admin', 'kepsek', 'tu'].includes(currentRole)) {
+      const guruSnap = await getDocs(
+        query(
+          collection(db, 'users'),
+          where('role', '==', 'guru'),
+          orderBy('name')
+        )
+      );
+      allGuru = guruSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const selGuru = document.getElementById('filterGuru');
+      if (selGuru) {
+        selGuru.innerHTML = '<option value="">Semua Guru</option>' +
+          allGuru.map(g =>
+            `<option value="${g.uid || g.id}">${g.name}</option>`
+          ).join('');
+      }
+    }
+  }
+}
+
+// ============================================================
+// LOAD: teacher_subjects untuk guru (rekap siswa per mapel)
+// ============================================================
+async function loadTeacherSubjectsForRekap(uid) {
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, 'teacher_subjects'),
+        where('teacher_uid', '==', uid),
+        where('status', '==', 'aktif')
+      )
+    );
+
+    if (snap.empty) {
+      teacherSubjects = [];
+      return;
+    }
+
+    const raw = snap.docs.map(d => d.data());
+    const classIds   = [...new Set(raw.map(r => r.class_id))];
+    const subjectIds = [...new Set(raw.map(r => r.subject_id))];
+
+    const classMap   = {};
+    const subjectMap = {};
+
+    await Promise.all([
+      ...classIds.map(async id => {
+        const d = await getDoc(doc(db, 'classes', id));
+        if (d.exists()) classMap[id] = d.data();
+      }),
+      ...subjectIds.map(async id => {
+        const d = await getDoc(doc(db, 'subjects', id));
+        if (d.exists()) subjectMap[id] = d.data();
+      }),
+    ]);
+
+    teacherSubjects = raw.map(r => ({
+      ...r,
+      class_name  : classMap[r.class_id]?.name    || r.class_id,
+      subject_name: subjectMap[r.subject_id]?.name || r.subject_id,
+    }));
+
+  } catch (err) {
+    console.error('[loadTeacherSubjectsForRekap] Error:', err);
+    teacherSubjects = [];
   }
 }
 
@@ -131,11 +212,12 @@ window.switchTab = function(tab) {
 
 // ============================================================
 // A. REKAP ABSENSI SISWA
-// Sumber: picket_attendance
+// Sumber: picket_attendance (admin/kepsek/tu) | subject_attendance (guru)
 // ============================================================
 window.loadRekapSiswa = async function() {
   const bulan   = document.getElementById('filterBulanSiswa').value;
   const kelasId = document.getElementById('filterKelasRekap').value;
+  const mapelId = document.getElementById('filterMapelRekap')?.value || '';
 
   if (!bulan) {
     showToast('Pilih bulan terlebih dahulu.', 'error');
@@ -151,15 +233,27 @@ window.loadRekapSiswa = async function() {
   document.getElementById('summaryRekapSiswa').innerHTML = '';
 
   try {
-    // Query picket_attendance dalam bulan tersebut
-    const snap = await getDocs(
-      query(
+    let snap;
+
+    if (currentRole === 'guru') {
+      const constraints = [
+        where('teacher_uid', '==', currentUid),
+        where('tanggal', '>=', Timestamp.fromDate(startDate)),
+        where('tanggal', '<',  Timestamp.fromDate(endDate)),
+        orderBy('tanggal'),
+      ];
+      if (mapelId) constraints.splice(1, 0, where('subject_id', '==', mapelId));
+      if (kelasId) constraints.splice(1, 0, where('class_id', '==', kelasId));
+
+      snap = await getDocs(query(collection(db, 'subject_attendance'), ...constraints));
+    } else {
+      snap = await getDocs(query(
         collection(db, 'picket_attendance'),
         where('tanggal', '>=', Timestamp.fromDate(startDate)),
         where('tanggal', '<',  Timestamp.fromDate(endDate)),
         orderBy('tanggal')
-      )
-    );
+      ));
+    }
 
     if (snap.empty) {
       document.getElementById('tableSiswa').innerHTML =
@@ -194,7 +288,6 @@ window.loadRekapSiswa = async function() {
     const studentMap = {};
 
     await Promise.all(studentIds.map(async id => {
-      // Cari berdasarkan field student_id
       const sSnap = await getDocs(
         query(
           collection(db, 'students'),
@@ -572,13 +665,13 @@ onAuthStateChanged(auth, async (user) => {
   setEl('sidebarAvatar', initial);
   setEl('topbarAvatar',  initial);
 
-  // Guru hanya bisa lihat tab rekap guru
+  // Guru: lihat rekap siswa dari subject_attendance, bukan picket_attendance
   if (role === 'guru') {
-    document.getElementById('tabSiswa')?.setAttribute('style', 'display:none');
-    switchTab('guru');
+    // filterGuru dan tabAbsensiGuru tetap ada untuk guru (rekap dirinya sendiri)
+    // Tapi filter guru di panel siswa disembunyikan
   }
 
-  // Sembunyikan filter guru jika role guru
+  // Sembunyikan filter guru di panel guru jika role guru (otomatis dirinya sendiri)
   if (role === 'guru') {
     const filterGuruWrap = document.getElementById('filterGuruWrap');
     if (filterGuruWrap) filterGuruWrap.style.display = 'none';

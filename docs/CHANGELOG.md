@@ -4,6 +4,33 @@ Format mengikuti standar di `AGENTS.md`.
 
 ---
 
+## [2026-06-11 11:00] — Task: Guru Lihat Rekap Kehadiran Siswa dari Subject Attendance | Versi: 1.4.0
+**Tipe:** ADD | **Agent:** Vibe-Coder | **Status:** ✅ Done
+
+### Ringkasan
+Guru sekarang bisa lihat rekap kehadiran siswa di tab "Absensi Siswa" dari data `subject_attendance` (absensi mapel yang guru input). Sebelumnya tab ini disembunyikan untuk guru. Admin/kepsek/tu tetap pakai `picket_attendance` (existing). Filter mapel & kelas dibatasi sesuai mata pelajaran yang diajar guru.
+
+### File yang Dimodifikasi
+| File | Perubahan |
+| :--- | :--- |
+| `assets/js/rekap-absensi.js` | Tambah state `teacherSubjects`, fungsi `loadTeacherSubjectsForRekap()`; `loadMasterData()` branch untuk guru (populate filter mapel & kelas terbatas); `loadRekapSiswa()` branch query — guru dari `subject_attendance` + filter mapel/kelas, non-guru tetap `picket_attendance`; `onAuthStateChanged` tampilkan tabSiswa untuk guru |
+| `rekap-absensi.html` | Tambah filter "Mata Pelajaran" (`#filterMapelWrap`) di panelSiswa, hidden untuk non-guru |
+
+### Keputusan Teknis
+- **Branch query di loadRekapSiswa** — Satu fungsi dengan percabangan role lebih sederhana daripada duplikasi kode. Aggregation & render tetap identik untuk kedua sumber data
+- **Filter mapel & kelas untuk guru** — Diambil dari `teacher_subjects` agar guru hanya melihat data yang relevan dengan mapel yang diajar; butuh composite index `[teacher_uid, subject_id, tanggal]` dan `[teacher_uid, class_id, tanggal]` di Firestore
+
+### Checklist Guru Lihat Rekap Kehadiran Siswa ✅
+- [x] Guru lihat tab "Absensi Siswa" (sebelumnya disembunyikan)
+- [x] Filter Mapel muncul untuk guru, diisi dari teacher_subjects
+- [x] Filter Kelas untuk guru hanya menampilkan kelas yg diajar
+- [x] Query data dari `subject_attendance` by teacher_uid
+- [x] Filter by mapel & kelas berfungsi untuk guru
+- [x] Admin/kepsek/tu tidak terpengaruh (tetap `picket_attendance`)
+- [x] Tabel & summary tampil sama untuk semua role
+
+---
+
 ## [2026-06-11 10:30] — Task: Fix Absensi Mapel Render Gagal | Versi: 1.3.0
 **Tipe:** FIX | **Agent:** Vibe-Coder | **Status:** ✅ Done
 
