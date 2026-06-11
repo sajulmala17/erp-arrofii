@@ -192,8 +192,14 @@ window.selectMapel = async function(idx) {
   existingDocId = null;
 
   showPanel(true);
-  await loadSiswaKelas();
-  await loadExistingAbsensi();
+
+  try {
+    await loadSiswaKelas();
+    await loadExistingAbsensi();
+  } catch (err) {
+    console.error('[selectMapel] Error:', err);
+  }
+
   renderAbsensiPanel();
 };
 
@@ -228,34 +234,38 @@ async function loadSiswaKelas() {
 // LOAD: Cek absensi yang sudah ada
 // ============================================================
 async function loadExistingAbsensi() {
-  const tanggal = document.getElementById('inputTanggal').value;
-  if (!tanggal || !selectedMapel) return;
+  try {
+    const tanggal = document.getElementById('inputTanggal').value;
+    if (!tanggal || !selectedMapel) return;
 
-  const docId  = generateDocId(
-    currentUid, tanggal,
-    selectedMapel.class_id,
-    selectedMapel.subject_id
-  );
-  const docRef = doc(db, 'subject_attendance', docId);
-  const snap   = await getDoc(docRef);
+    const docId  = generateDocId(
+      currentUid, tanggal,
+      selectedMapel.class_id,
+      selectedMapel.subject_id
+    );
+    const docRef = doc(db, 'subject_attendance', docId);
+    const snap   = await getDoc(docRef);
 
-  if (snap.exists()) {
-    const data       = snap.data();
-    existingDocId    = docId;
-    kehadiranMap     = data.kehadiran_siswa || {};
-    jamDipilih       = data.jam_pelajaran   || [];
+    if (snap.exists()) {
+      const data       = snap.data();
+      existingDocId    = docId;
+      kehadiranMap     = data.kehadiran_siswa || {};
+      jamDipilih       = data.jam_pelajaran   || [];
 
-    // Set status guru
-    const statusGuru = data.status_guru || 'hadir';
-    document.querySelectorAll('.guru-status-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.status === statusGuru);
-    });
+      // Set status guru
+      const statusGuru = data.status_guru || 'hadir';
+      document.querySelectorAll('.guru-status-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.status === statusGuru);
+      });
 
-    // Update badge status
-    setEl('statusMapelAbsensi', `<span class="badge-saved">✓ Tersimpan</span>`);
-  } else {
-    existingDocId = null;
-    setEl('statusMapelAbsensi', `<span class="badge-draft">● Draft Baru</span>`);
+      // Update badge status
+      setEl('statusMapelAbsensi', `<span class="badge-saved">✓ Tersimpan</span>`);
+    } else {
+      existingDocId = null;
+      setEl('statusMapelAbsensi', `<span class="badge-draft">● Draft Baru</span>`);
+    }
+  } catch (err) {
+    console.error('[loadExistingAbsensi] Error:', err);
   }
 }
 

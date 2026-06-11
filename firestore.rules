@@ -452,29 +452,38 @@ service cloud.firestore {
     // ----------------------------------------------------------
     // 14. KOLEKSI: subject_attendance
     // admin  → Full
-		// kepsek → Read
-		// guru   → Read+Write (hanya milik sendiri)
-		// tu     → Read+Write (hanya milik sendiri, bisa jadi guru piket)
-		// lainnya → Tidak ada akses
-		// ----------------------------------------------------------
-		match /subject_attendance/{docId} {
-  		function isSubjectAttendanceOwner() {
-    		return hasRole(['guru', 'tu']) && request.auth.uid == resource.data.teacher_uid;
-  		}
+    // kepsek → Read
+    // guru   → Read+Write (hanya milik sendiri)
+    // tu     → Read+Write (hanya milik sendiri, bisa jadi guru piket)
+    // lainnya → Tidak ada akses
+    //
+    // PENTING: `get` harus izinkan resource == null (doc belum ada)
+    // karena loadExistingAbsensi() di client panggil getDoc sebelum
+    // absensi pertama dibuat. Tanpa ini guru dapat 403 → render gagal.
+    // ----------------------------------------------------------
+    match /subject_attendance/{docId} {
+      function isSubjectAttendanceOwner() {
+        return hasRole(['guru', 'tu']) && resource != null && request.auth.uid == resource.data.teacher_uid;
+      }
 
-		  function isNewSubjectAttendanceOwner() {
-    		return hasRole(['guru', 'tu']) && request.auth.uid == request.resource.data.teacher_uid;
-  		}
+      function isNewSubjectAttendanceOwner() {
+        return hasRole(['guru', 'tu']) && request.auth.uid == request.resource.data.teacher_uid;
+      }
 
-  		allow read: if isAdmin()
-              || isKepsek()
-              || isSubjectAttendanceOwner()
-              || (hasRole(['guru', 'tu']) &&
-                  request.auth.uid == resource.data.teacher_uid);
+      // get: izinkan doc belum ada (resource == null) agar getDoc tidak throw
+      allow get: if isAdmin()
+                 || isKepsek()
+                 || isSubjectAttendanceOwner()
+                 || (hasRole(['guru', 'tu']) && resource == null);
 
-  		allow create: if isAdmin() || isNewSubjectAttendanceOwner();
-  		allow update: if isAdmin() || isSubjectAttendanceOwner();
-  		allow delete: if isAdmin();
-		}
+      // list: hanya doc milik sendiri
+      allow list: if isAdmin()
+                  || isKepsek()
+                  || isSubjectAttendanceOwner();
+
+      allow create: if isAdmin() || isNewSubjectAttendanceOwner();
+      allow update: if isAdmin() || isSubjectAttendanceOwner();
+      allow delete: if isAdmin();
+    }
   } // end match /databases/{database}/documents
 } // end service cloud.firestore

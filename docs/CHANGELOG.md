@@ -4,6 +4,31 @@ Format mengikuti standar di `AGENTS.md`.
 
 ---
 
+## [2026-06-11 10:30] — Task: Fix Absensi Mapel Render Gagal | Versi: 1.3.0
+**Tipe:** FIX | **Agent:** Vibe-Coder | **Status:** ✅ Done
+
+### Ringkasan
+Perbaiki bug kritis di halaman absensi mapel: tombol jam pelajaran (1-8) dan daftar siswa tidak muncul setelah guru memilih mapel. Akar masalah: `loadExistingAbsensi()` tidak punya try/catch dan Firestore rules deny read untuk dokumen `subject_attendance` yang belum ada. Dampak: `renderAbsensiPanel()` tidak pernah dijalankan karena exception tidak tertangani.
+
+### File yang Dimodifikasi
+| File | Perubahan |
+| :--- | :--- |
+| `firestore.rules` | Pisah `read` jadi `get` + `list` untuk `subject_attendance`; `get` izinkan `resource == null` (doc belum ada) agar `getDoc` tidak 403 |
+| `assets/js/absensi-mapel.js` | Tambah try/catch di `loadExistingAbsensi()` dan `selectMapel()`; pastikan `renderAbsensiPanel()` tetap jalan meski load data gagal |
+
+### Keputusan Teknis
+- **Split read rule** — Menggabung `get`+`list` dalam satu `read` rule menyebabkan `resource.data` diakses saat `resource == null`, yang selalu deny untuk doc baru. Pisah jadi `allow get` (izinkan null) dan `allow list` (cek ownership)
+- **Try/catch di load vs caller** — Taruh try/catch di kedua level (fungsi load + pemanggil) agar error di salah satu load tidak memblokir load lain atau render
+
+### Checklist Fix Absensi Mapel Render Gagal ✅
+- [x] Tombol jam 1-8 muncul setelah klik mapel (first-time, belum ada absensi)
+- [x] Daftar siswa muncul setelah klik mapel
+- [x] Simpan absensi baru berhasil
+- [x] Load absensi yang sudah ada (edit mode) tetap berfungsi
+- [x] Ganti tanggal → pilih mapel → tetap muncul tombol & siswa
+
+---
+
 ## [2026-06-11 10:00] — Task: Fix UI Mapel untuk Role Guru | Versi: 1.2.0
 **Tipe:** FIX | **Agent:** Vibe-Coder | **Status:** ✅ Done
 
